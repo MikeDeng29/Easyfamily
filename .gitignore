@@ -1,0 +1,16 @@
+# Maven
+**/target/
+**/.m2repo/
+
+# Node
+**/node_modules/
+**/dist/
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
