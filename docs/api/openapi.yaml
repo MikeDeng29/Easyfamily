@@ -1,0 +1,120 @@
+openapi: 3.0.3
+info:
+  title: easyfamily API
+  version: 0.0.1
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/v1/auth/captcha/verify:
+    post:
+      summary: Verify captcha ticket
+      responses:
+        "200":
+          description: ok
+  /api/v1/auth/sms/send:
+    post:
+      summary: Send login SMS code
+      responses:
+        "200":
+          description: ok
+  /api/v1/auth/login:
+    post:
+      summary: Login by phone and SMS code
+      responses:
+        "200":
+          description: ok
+  /api/v1/query/phone-binding:
+    post:
+      summary: Query bank/social binding by phone
+      responses:
+        "200":
+          description: ok
+  /api/v1/phones/mine:
+    get:
+      summary: Get current user phone list
+      responses:
+        "200":
+          description: ok
+  /api/v1/admin/reports/dau:
+    get:
+      summary: Daily active user report
+      responses:
+        "200":
+          description: ok
+  /api/v1/admin/reports/feature-hot:
+    get:
+      summary: Feature usage report
+      responses:
+        "200":
+          description: ok
+  /api/v1/admin/reports/query-overview:
+    get:
+      summary: Query overview and cache hit stats
+      responses:
+        "200":
+          description: ok
+  /api/v1/admin/query-settings:
+    get:
+      summary: Get runtime query settings (provider, cache, quota, resiliency)
+      responses:
+        "200":
+          description: ok
+  /api/v1/admin/quota:
+    patch:
+      summary: Update query quotas and runtime strategy
+      parameters:
+        - in: query
+          name: dailyQuotaPerUser
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: dailyQuotaPerPhone
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: dailyQuotaPerIp
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: preferRedisCache
+          required: false
+          schema:
+            type: boolean
+        - in: query
+          name: providerKey
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: providerTimeoutMs
+          required: false
+          schema:
+            type: integer
+            minimum: 100
+        - in: query
+          name: providerRetryTimes
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: providerCircuitFailureThreshold
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: providerCircuitOpenSeconds
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: ok

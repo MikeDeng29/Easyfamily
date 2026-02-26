@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: easyfamily
+  datasource:
+    url: jdbc:h2:mem:easyfamily;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+server:
+  port: 8080
+
+easyfamily:
+  security:
+    jwt-secret: "replace-with-strong-secret-replace-with-strong-secret"
+    access-token-minutes: 30
+    refresh-token-days: 7
+  query:
+    cache-ttl-seconds: 86400
+    daily-quota-per-user: 10
+    daily-quota-per-phone: 30
+    daily-quota-per-ip: 100
+    prefer-redis-cache: true
+    provider-key: aliyun-market
+    provider-timeout-ms: 1500
+    provider-retry-times: 1
+    provider-circuit-failure-threshold: 5
+    provider-circuit-open-seconds: 30
+    aliyun-market:
+      base-url: "https://example.aliyun-market.com"
+      path: "/phone/binding/query"
+      app-code: "replace-with-real-appcode"
