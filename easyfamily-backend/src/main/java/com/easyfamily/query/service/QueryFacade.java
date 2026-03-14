@@ -1,8 +1,9 @@
 package com.easyfamily.query.service;
 
+import com.easyfamily.phone.service.PhoneManagementService;
 import com.easyfamily.query.config.QueryProperties;
-import com.easyfamily.query.dto.QueryDtos.BindingQueryRequest;
-import com.easyfamily.query.dto.QueryDtos.BindingQueryResponse;
+import com.easyfamily.query.dto.QueryDtos.RealNameVerifyRequest;
+import com.easyfamily.query.dto.QueryDtos.RealNameVerifyResponse;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,25 +13,39 @@ public class QueryFacade {
     private final QueryService queryService;
     private final QueryRecordService queryRecordService;
     private final QueryProperties queryProperties;
+    private final PhoneManagementService phoneManagementService;
 
     public QueryFacade(
             QueryQuotaService queryQuotaService,
             QueryService queryService,
             QueryRecordService queryRecordService,
-            QueryProperties queryProperties
+            QueryProperties queryProperties,
+            PhoneManagementService phoneManagementService
     ) {
         this.queryQuotaService = queryQuotaService;
         this.queryService = queryService;
         this.queryRecordService = queryRecordService;
         this.queryProperties = queryProperties;
+        this.phoneManagementService = phoneManagementService;
     }
 
-    public BindingQueryResponse queryBinding(String userId, String ip, BindingQueryRequest request) {
+    public RealNameVerifyResponse verifyRealName(String userId, String loginPhone, String ip, RealNameVerifyRequest request) {
+        long start = System.currentTimeMillis();
+        phoneManagementService.ensurePhoneOwnedByUser(userId, loginPhone, request.phone());
         queryQuotaService.ensureWithinQuota(userId, request.phone(), ip);
-        BindingQueryResponse response = queryService.queryBinding(request, queryProperties.cacheTtlSeconds());
+        RealNameVerifyResponse response = queryService.verifyRealName(request, queryProperties.cacheTtlSeconds());
+        boolean cacheHit = "redis-cache".equals(response.source());
+        int latencyMs = Math.toIntExact(System.currentTimeMillis() - start);
         queryRecordService.recordQuery(
                 userId,
-                "in-memory-cache".equals(response.source()) || "redis-cache".equals(response.source())
+                loginPhone,
+                request.phone(),
+                "REAL_NAME",
+                response.source(),
+                cacheHit,
+                "OK",
+                latencyMs,
+                ip
         );
         return response;
     }

@@ -1,8 +1,8 @@
 package com.easyfamily.query.controller;
 
 import com.easyfamily.common.api.ApiResponse;
-import com.easyfamily.query.dto.QueryDtos.BindingQueryRequest;
-import com.easyfamily.query.dto.QueryDtos.BindingQueryResponse;
+import com.easyfamily.query.dto.QueryDtos.RealNameVerifyRequest;
+import com.easyfamily.query.dto.QueryDtos.RealNameVerifyResponse;
 import com.easyfamily.query.service.QueryFacade;
 import com.easyfamily.security.AuthContext;
 import jakarta.validation.Valid;
@@ -22,14 +22,14 @@ public class QueryController {
         this.queryFacade = queryFacade;
     }
 
-    @PostMapping("/phone-binding")
-    public ApiResponse<BindingQueryResponse> queryPhoneBinding(
-            @Valid @RequestBody BindingQueryRequest request,
+    @PostMapping("/real-name")
+    public ApiResponse<RealNameVerifyResponse> verifyRealName(
+            @Valid @RequestBody RealNameVerifyRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        String userId = AuthContext.currentUser().userId();
+        var current = AuthContext.currentUser();
         String ip = resolveClientIp(httpServletRequest);
-        return ApiResponse.ok(queryFacade.queryBinding(userId, ip, request));
+        return ApiResponse.ok(queryFacade.verifyRealName(current.userId(), current.phone(), ip, request));
     }
 
     private String resolveClientIp(HttpServletRequest request) {

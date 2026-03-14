@@ -1,9 +1,11 @@
 package com.easyfamily.report.controller;
 
 import com.easyfamily.common.api.ApiResponse;
+import com.easyfamily.auth.service.LoginAuditLogService;
 import com.easyfamily.query.service.QueryQuotaService;
-import com.easyfamily.query.service.QueryRecordService;
 import com.easyfamily.query.service.QueryRuntimeSettingsService;
+import com.easyfamily.report.service.ReportMetricStoreService;
+import com.easyfamily.report.service.ReportReadService;
 import jakarta.validation.constraints.Min;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -21,23 +23,26 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1/admin")
 public class ReportController {
 
-    private final QueryRecordService queryRecordService;
+    private final ReportReadService reportReadService;
     private final QueryQuotaService queryQuotaService;
     private final QueryRuntimeSettingsService settingsService;
+    private final LoginAuditLogService loginAuditLogService;
 
     public ReportController(
-            QueryRecordService queryRecordService,
+            ReportReadService reportReadService,
             QueryQuotaService queryQuotaService,
-            QueryRuntimeSettingsService settingsService
+            QueryRuntimeSettingsService settingsService,
+            LoginAuditLogService loginAuditLogService
     ) {
-        this.queryRecordService = queryRecordService;
+        this.reportReadService = reportReadService;
         this.queryQuotaService = queryQuotaService;
         this.settingsService = settingsService;
+        this.loginAuditLogService = loginAuditLogService;
     }
 
     @GetMapping("/reports/dau")
     public ApiResponse<List<Map<String, Object>>> getDauReport() {
-        List<Map<String, Object>> rows = queryRecordService.dauSnapshot().entrySet().stream()
+        List<Map<String, Object>> rows = reportReadService.dauSnapshot().entrySet().stream()
                 .sorted(Map.Entry.comparingByKey(LocalDate::compareTo))
                 .map(entry -> Map.of("date", entry.getKey().toString(), "dau", (Object) entry.getValue()))
                 .collect(Collectors.toList());
@@ -46,7 +51,7 @@ public class ReportController {
 
     @GetMapping("/reports/feature-hot")
     public ApiResponse<List<Map<String, Object>>> getFeatureHotReport() {
-        List<Map<String, Object>> rows = queryRecordService.featurePvSnapshot().entrySet().stream()
+        List<Map<String, Object>> rows = reportReadService.featurePvSnapshot().entrySet().stream()
                 .map(entry -> Map.of("feature", entry.getKey(), "pv", (Object) entry.getValue()))
                 .collect(Collectors.toList());
         return ApiResponse.ok(rows);
@@ -54,13 +59,15 @@ public class ReportController {
 
     @GetMapping("/reports/query-overview")
     public ApiResponse<Map<String, Object>> queryOverview() {
-        int total = queryRecordService.totalQueryCount();
-        int hits = queryRecordService.cacheHitCount();
+        ReportMetricStoreService.OverviewMetrics overviewMetrics = reportReadService.overviewTotals();
+        int total = overviewMetrics.totalQueryCount();
+        int hits = overviewMetrics.cacheHitCount();
         double hitRate = total == 0 ? 0.0 : (double) hits / total;
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("totalQueryCount", total);
         payload.put("cacheHitCount", hits);
         payload.put("cacheHitRate", hitRate);
+        payload.put("loginUserCount", loginAuditLogService.countDistinctSuccessfulLoginsToday("USER_PHONE"));
         payload.put("dailyQuotaPerUser", queryQuotaService.effectiveDailyQuota());
         payload.put("dailyQuotaPerPhone", settingsService.current().dailyQuotaPerPhone());
         payload.put("dailyQuotaPerIp", settingsService.current().dailyQuotaPerIp());
@@ -71,6 +78,19 @@ public class ReportController {
         payload.put("providerCircuitFailureThreshold", settingsService.current().providerCircuitFailureThreshold());
         payload.put("providerCircuitOpenSeconds", settingsService.current().providerCircuitOpenSeconds());
         return ApiResponse.ok(payload);
+    }
+
+    @GetMapping("/reports/login-users-weekly")
+    public ApiResponse<List<Map<String, Object>>> loginUsersWeekly() {
+        List<Map<String, Object>> rows = loginAuditLogService.countDistinctSuccessfulLoginsLastDays("USER_PHONE", 7)
+                .entrySet()
+                .stream()
+                .map(entry -> Map.of(
+                        "date", (Object) entry.getKey().toString(),
+                        "loginUserCount", (Object) entry.getValue()
+                ))
+                .collect(Collectors.toList());
+        return ApiResponse.ok(rows);
     }
 
     @GetMapping("/query-settings")

@@ -11,10 +11,15 @@ public class MockBindingQueryProvider implements BindingQueryProvider {
     }
 
     @Override
-    public ProviderResult queryBinding(String phone, String queryType) {
-        // Placeholder provider logic for MVP. Replace with real third-party API.
-        boolean bankBound = phone.endsWith("0") || phone.endsWith("8");
-        boolean socialBound = !phone.endsWith("9");
-        return new ProviderResult(bankBound, socialBound, "provider-mock");
+    public ProviderResult verifyRealName(String phone, String name, String idCardNo) {
+        // Placeholder logic for local testing; replace with real third-party API.
+        boolean verified;
+        if (idCardNo == null || idCardNo.isBlank()) {
+            verified = !name.isBlank() && Character.getNumericValue(phone.charAt(phone.length() - 1)) % 2 == 0;
+        } else {
+            verified = phone.charAt(phone.length() - 1) == idCardNo.charAt(idCardNo.length() - 1)
+                    && !name.isBlank();
+        }
+        return new ProviderResult(verified, "provider-mock");
     }
 }

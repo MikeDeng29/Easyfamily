@@ -1,0 +1,915 @@
+openapi: 3.0.3
+info:
+  title: Easyfamily API Contract
+  version: 0.1.0
+  description: |
+    Contract-first API definition for Easyfamily backend.
+    All successful and business-failed responses follow ApiResponse envelope.
+    Public error codes are client-facing only and never expose internal exception codes.
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: Auth
+  - name: Query
+  - name: Phone
+  - name: Family
+  - name: Admin
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/auth/captcha/verify:
+    post:
+      tags: [Auth]
+      summary: Verify captcha ticket and issue captcha token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CaptchaVerifyRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCaptchaToken'
+
+  /api/v1/auth/captcha/slide/init:
+    post:
+      tags: [Auth]
+      summary: Initialize slide captcha challenge
+      security: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlideCaptchaInitRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseSlideCaptchaInit'
+
+  /api/v1/auth/captcha/slide/verify:
+    post:
+      tags: [Auth]
+      summary: Verify slide captcha and issue captcha token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlideCaptchaVerifyRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCaptchaToken'
+
+  /api/v1/auth/sms/send:
+    post:
+      tags: [Auth]
+      summary: Send SMS code for login/register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SmsSendRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseVoid'
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login (and implicit registration on first login)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseLogin'
+
+  /api/v1/auth/admin/login:
+    post:
+      tags: [Auth]
+      summary: Admin login by username/password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminLoginRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseLogin'
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access/refresh token pair
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseRefresh'
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout and revoke tokens
+      parameters:
+        - in: header
+          name: Authorization
+          required: false
+          schema:
+            type: string
+            example: Bearer eyJhbGciOi...
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseVoid'
+
+  /api/v1/query/phone-binding:
+    post:
+      tags: [Query]
+      summary: Query binding status for a bound phone number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BindingQueryRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseBindingQuery'
+        '401':
+          description: Missing/invalid access token
+
+  /api/v1/phones/mine:
+    get:
+      tags: [Phone]
+      summary: List current user's phones
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponsePhoneList'
+        '401':
+          description: Missing/invalid access token
+
+  /api/v1/phones/bind:
+    post:
+      tags: [Phone]
+      summary: Bind a secondary phone (requires SMS verification code)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneBindRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseVoid'
+        '401':
+          description: Missing/invalid access token
+
+  /api/v1/phones/unbind:
+    post:
+      tags: [Phone]
+      summary: Unbind a non-primary phone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneUnbindRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseVoid'
+        '401':
+          description: Missing/invalid access token
+
+  /api/v1/phones/primary:
+    post:
+      tags: [Phone]
+      summary: Set one bound phone as primary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneSetPrimaryRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseVoid'
+        '401':
+          description: Missing/invalid access token
+
+  /api/v1/family/members:
+    get:
+      tags: [Family]
+      summary: List current user's family members
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseFamilyMemberList'
+        '401':
+          description: Missing/invalid access token
+    post:
+      tags: [Family]
+      summary: Create a family member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FamilyMemberCreateRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseFamilyMember'
+        '401':
+          description: Missing/invalid access token
+
+  /api/v1/family/members/{memberId}:
+    get:
+      tags: [Family]
+      summary: Get one family member
+      parameters:
+        - in: path
+          name: memberId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseFamilyMember'
+        '401':
+          description: Missing/invalid access token
+    put:
+      tags: [Family]
+      summary: Update one family member
+      parameters:
+        - in: path
+          name: memberId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FamilyMemberUpdateRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseFamilyMember'
+        '401':
+          description: Missing/invalid access token
+    delete:
+      tags: [Family]
+      summary: Delete one family member
+      parameters:
+        - in: path
+          name: memberId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseVoid'
+        '401':
+          description: Missing/invalid access token
+
+  /api/v1/admin/reports/dau:
+    get:
+      tags: [Admin]
+      summary: DAU report
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseDauReport'
+        '401':
+          description: Missing/invalid access token
+
+  /api/v1/admin/reports/feature-hot:
+    get:
+      tags: [Admin]
+      summary: Feature hot report
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseFeatureHotReport'
+        '401':
+          description: Missing/invalid access token
+
+  /api/v1/admin/reports/query-overview:
+    get:
+      tags: [Admin]
+      summary: Query overview report
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseQueryOverview'
+        '401':
+          description: Missing/invalid access token
+
+  /api/v1/admin/query-settings:
+    get:
+      tags: [Admin]
+      summary: Get runtime query settings
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseQuerySettings'
+        '401':
+          description: Missing/invalid access token
+
+  /api/v1/admin/quota:
+    patch:
+      tags: [Admin]
+      summary: Update runtime query quota/settings
+      parameters:
+        - in: query
+          name: dailyQuotaPerUser
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: dailyQuotaPerPhone
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: dailyQuotaPerIp
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: preferRedisCache
+          schema:
+            type: boolean
+        - in: query
+          name: providerKey
+          schema:
+            type: string
+        - in: query
+          name: providerTimeoutMs
+          schema:
+            type: integer
+            minimum: 100
+        - in: query
+          name: providerRetryTimes
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: providerCircuitFailureThreshold
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: providerCircuitOpenSeconds
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseQuerySettings'
+        '401':
+          description: Missing/invalid access token
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiResponseVoid:
+      type: object
+      properties:
+        code:
+          type: string
+          example: OK
+        message:
+          type: string
+          example: success
+        data:
+          nullable: true
+      required: [code, message]
+
+    ApiResponseError:
+      type: object
+      description: Public error response. Internal exception codes are never returned to clients.
+      properties:
+        code:
+          type: string
+          enum:
+            - BAD_REQUEST
+            - UNAUTHORIZED
+            - FORBIDDEN
+            - AUTH_FAILED
+            - PHONE_ERROR
+            - QUOTA_EXCEEDED
+            - SERVICE_UNAVAILABLE
+            - INTERNAL_ERROR
+            - BIZ_ERROR
+          example: AUTH_FAILED
+        message:
+          type: string
+          example: 登录状态已过期，请重新登录
+        data:
+          nullable: true
+      required: [code, message]
+
+    ApiResponseCaptchaToken:
+      type: object
+      properties:
+        code: { type: string, example: OK }
+        message: { type: string, example: success }
+        data:
+          type: object
+          properties:
+            captchaToken: { type: string, example: mock-1b5c2db8-a957-4f54-b31f-40bc8eb0e5a2 }
+          required: [captchaToken]
+      required: [code, message, data]
+
+    ApiResponseSlideCaptchaInit:
+      type: object
+      properties:
+        code: { type: string, example: OK }
+        message: { type: string, example: success }
+        data:
+          $ref: '#/components/schemas/SlideCaptchaInitResponse'
+      required: [code, message, data]
+
+    ApiResponseLogin:
+      type: object
+      properties:
+        code: { type: string, example: OK }
+        message: { type: string, example: success }
+        data:
+          $ref: '#/components/schemas/LoginResponse'
+      required: [code, message, data]
+
+    ApiResponseRefresh:
+      type: object
+      properties:
+        code: { type: string, example: OK }
+        message: { type: string, example: success }
+        data:
+          $ref: '#/components/schemas/RefreshResponse'
+      required: [code, message, data]
+
+    ApiResponseBindingQuery:
+      type: object
+      properties:
+        code: { type: string, example: OK }
+        message: { type: string, example: success }
+        data:
+          $ref: '#/components/schemas/BindingQueryResponse'
+      required: [code, message, data]
+
+    ApiResponsePhoneList:
+      type: object
+      properties:
+        code: { type: string, example: OK }
+        message: { type: string, example: success }
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PhoneItem'
+      required: [code, message, data]
+
+    ApiResponseDauReport:
+      type: object
+      properties:
+        code: { type: string, example: OK }
+        message: { type: string, example: success }
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              date: { type: string, example: "2026-03-07" }
+              dau: { type: integer, example: 123 }
+      required: [code, message, data]
+
+    ApiResponseFeatureHotReport:
+      type: object
+      properties:
+        code: { type: string, example: OK }
+        message: { type: string, example: success }
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              feature: { type: string, example: phone-binding-query }
+              pv: { type: integer, example: 321 }
+      required: [code, message, data]
+
+    ApiResponseQueryOverview:
+      type: object
+      properties:
+        code: { type: string, example: OK }
+        message: { type: string, example: success }
+        data:
+          $ref: '#/components/schemas/QueryOverview'
+      required: [code, message, data]
+
+    ApiResponseQuerySettings:
+      type: object
+      properties:
+        code: { type: string, example: OK }
+        message: { type: string, example: success }
+        data:
+          $ref: '#/components/schemas/QuerySettings'
+      required: [code, message, data]
+
+    ApiResponseFamilyMember:
+      type: object
+      properties:
+        code: { type: string, example: OK }
+        message: { type: string, example: success }
+        data:
+          $ref: '#/components/schemas/FamilyMemberItem'
+      required: [code, message, data]
+
+    ApiResponseFamilyMemberList:
+      type: object
+      properties:
+        code: { type: string, example: OK }
+        message: { type: string, example: success }
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FamilyMemberItem'
+      required: [code, message, data]
+
+    CaptchaVerifyRequest:
+      type: object
+      properties:
+        captchaProvider:
+          type: string
+          minLength: 1
+        ticket:
+          type: string
+          minLength: 1
+      required: [captchaProvider, ticket]
+
+    SmsSendRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          pattern: '^1\d{10}$'
+        captchaToken:
+          type: string
+          minLength: 1
+      required: [phone, captchaToken]
+
+    SlideCaptchaInitRequest:
+      type: object
+      properties:
+        clientId:
+          type: string
+          example: android-app
+
+    SlideCaptchaInitResponse:
+      type: object
+      properties:
+        challengeId:
+          type: string
+          example: slide-5bb86e7e-37e8-4679-b23d-98db9407722a
+        backgroundImageUrl:
+          type: string
+          description: Dynamic data URL (SVG base64) for puzzle background
+          example: data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnLi4u
+        sliderImageUrl:
+          type: string
+          description: Dynamic data URL (SVG base64) for slider block
+          example: data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnLi4u
+        expireAtEpochSeconds:
+          type: integer
+          format: int64
+          example: 1772901500
+      required: [challengeId, backgroundImageUrl, sliderImageUrl, expireAtEpochSeconds]
+
+    SlideCaptchaVerifyRequest:
+      type: object
+      properties:
+        challengeId:
+          type: string
+          minLength: 1
+        offsetX:
+          type: integer
+          minimum: 0
+        totalTimeMs:
+          type: integer
+          minimum: 1
+          description: Total drag duration in milliseconds
+        tracks:
+          type: array
+          minItems: 1
+          description: Drag trajectory points sampled by client
+          items:
+            $ref: '#/components/schemas/SlideTrackPoint'
+      required: [challengeId, offsetX, totalTimeMs, tracks]
+
+    SlideTrackPoint:
+      type: object
+      properties:
+        x:
+          type: integer
+          minimum: 0
+        y:
+          type: integer
+          minimum: 0
+        t:
+          type: integer
+          minimum: 0
+          description: Milliseconds since drag start
+      required: [x, y, t]
+
+    LoginRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          pattern: '^1\d{10}$'
+        smsCode:
+          type: string
+          minLength: 1
+      required: [phone, smsCode]
+
+    AdminLoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+      required: [username, password]
+
+    LoginResponse:
+      type: object
+      properties:
+        userId: { type: string, example: U13800138000 }
+        accessToken: { type: string }
+        refreshToken: { type: string }
+      required: [userId, accessToken, refreshToken]
+
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          minLength: 1
+      required: [refreshToken]
+
+    RefreshResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+      required: [accessToken, refreshToken]
+
+    LogoutRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+      additionalProperties: false
+
+    BindingQueryRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          pattern: '^1\d{10}$'
+        queryType:
+          type: string
+          minLength: 1
+          example: all
+      required: [phone, queryType]
+
+    BindingQueryResponse:
+      type: object
+      properties:
+        phone: { type: string, example: "13800138000" }
+        bankBound: { type: boolean, example: true }
+        socialBound: { type: boolean, example: false }
+        source: { type: string, example: provider-simulated }
+        queryTimestamp: { type: integer, format: int64 }
+      required: [phone, bankBound, socialBound, source, queryTimestamp]
+
+    PhoneItem:
+      type: object
+      properties:
+        phone:
+          type: string
+          pattern: '^1\d{10}$'
+        isPrimary:
+          type: boolean
+        status:
+          type: string
+          example: ACTIVE
+      required: [phone, isPrimary, status]
+
+    PhoneBindRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          pattern: '^1\d{10}$'
+        smsCode:
+          type: string
+          minLength: 1
+      required: [phone, smsCode]
+
+    PhoneUnbindRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          pattern: '^1\d{10}$'
+      required: [phone]
+
+    PhoneSetPrimaryRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          pattern: '^1\d{10}$'
+      required: [phone]
+
+    FamilyMemberItem:
+      type: object
+      properties:
+        memberId: { type: string, example: FMd18895d94dfc42b08ac4119f2ca31883 }
+        name: { type: string, example: Alice }
+        phone:
+          type: string
+          pattern: '^1\d{10}$'
+        relation: { type: string, example: spouse }
+      required: [memberId, name, phone, relation]
+
+    FamilyMemberCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+          pattern: '^1\d{10}$'
+        relation:
+          type: string
+          minLength: 1
+      required: [name, phone, relation]
+
+    FamilyMemberUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+          pattern: '^1\d{10}$'
+        relation:
+          type: string
+          minLength: 1
+      required: [name, phone, relation]
+
+    QueryOverview:
+      type: object
+      properties:
+        totalQueryCount: { type: integer, example: 10 }
+        cacheHitCount: { type: integer, example: 7 }
+        cacheHitRate: { type: number, format: double, example: 0.7 }
+        dailyQuotaPerUser: { type: integer, example: 3 }
+        dailyQuotaPerPhone: { type: integer, example: 30 }
+        dailyQuotaPerIp: { type: integer, example: 100 }
+        preferRedisCache: { type: boolean, example: true }
+        providerKey: { type: string, example: aliyun-market }
+        providerTimeoutMs: { type: integer, example: 1500 }
+        providerRetryTimes: { type: integer, example: 1 }
+        providerCircuitFailureThreshold: { type: integer, example: 5 }
+        providerCircuitOpenSeconds: { type: integer, example: 30 }
+
+    QuerySettings:
+      type: object
+      properties:
+        dailyQuotaPerUser: { type: integer, example: 3 }
+        dailyQuotaPerPhone: { type: integer, example: 30 }
+        dailyQuotaPerIp: { type: integer, example: 100 }
+        preferRedisCache: { type: boolean, example: true }
+        providerKey: { type: string, example: aliyun-market }
+        providerTimeoutMs: { type: integer, example: 1500 }
+        providerRetryTimes: { type: integer, example: 1 }
+        providerCircuitFailureThreshold: { type: integer, example: 5 }
+        providerCircuitOpenSeconds: { type: integer, example: 30 }

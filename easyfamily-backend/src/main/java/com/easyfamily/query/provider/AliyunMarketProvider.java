@@ -31,14 +31,16 @@ public class AliyunMarketProvider implements BindingQueryProvider {
     }
 
     @Override
-    public ProviderResult queryBinding(String phone, String queryType) {
+    public ProviderResult verifyRealName(String phone, String name, String idCardNo) {
         ensureConfigured();
-        URI uri = UriComponentsBuilder.fromUriString(properties.baseUrl())
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(properties.baseUrl())
                 .path(properties.path())
                 .queryParam("phone", phone)
-                .queryParam("queryType", queryType)
-                .build(true)
-                .toUri();
+                .queryParam("name", name);
+        if (idCardNo != null && !idCardNo.isBlank()) {
+            builder.queryParam("idCardNo", idCardNo);
+        }
+        URI uri = builder.build(true).toUri();
 
         HttpRequest request = HttpRequest.newBuilder()
                 .GET()
@@ -54,9 +56,8 @@ public class AliyunMarketProvider implements BindingQueryProvider {
                 throw new BusinessException("ALIYUN_MARKET_HTTP_ERROR", "aliyun market status=" + response.statusCode());
             }
             JsonNode root = objectMapper.readTree(response.body());
-            boolean bankBound = parseBoolean(root, "bankBound");
-            boolean socialBound = parseBoolean(root, "socialBound");
-            return new ProviderResult(bankBound, socialBound, "provider-aliyun-market");
+            boolean verified = parseBoolean(root, "verified");
+            return new ProviderResult(verified, "provider-aliyun-market");
         } catch (BusinessException ex) {
             throw ex;
         } catch (Exception ex) {

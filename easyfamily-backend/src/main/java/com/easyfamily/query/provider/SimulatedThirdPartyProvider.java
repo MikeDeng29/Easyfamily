@@ -11,9 +11,9 @@ public class SimulatedThirdPartyProvider implements BindingQueryProvider {
     }
 
     @Override
-    public ProviderResult queryBinding(String phone, String queryType) {
-        boolean bankBound = phone.chars().sum() % 2 == 0;
-        boolean socialBound = phone.chars().sum() % 3 != 0;
-        return new ProviderResult(bankBound, socialBound, "provider-simulated");
+    public ProviderResult verifyRealName(String phone, String name, String idCardNo) {
+        int signal = phone.chars().sum() + name.chars().sum() + (idCardNo == null ? 0 : idCardNo.chars().sum());
+        boolean verified = signal % 2 == 0;
+        return new ProviderResult(verified, "provider-simulated");
     }
 }

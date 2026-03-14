@@ -1,7 +1,13 @@
 package com.easyfamily.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.Valid;
+
+import java.util.List;
 
 public final class AuthDtos {
 
@@ -11,6 +17,34 @@ public final class AuthDtos {
     public record CaptchaVerifyRequest(
             @NotBlank String captchaProvider,
             @NotBlank String ticket
+    ) {
+    }
+
+    public record SlideCaptchaInitRequest(
+            String clientId
+    ) {
+    }
+
+    public record SlideCaptchaInitResponse(
+            String challengeId,
+            String backgroundImageUrl,
+            String sliderImageUrl,
+            long expireAtEpochSeconds
+    ) {
+    }
+
+    public record SlideCaptchaVerifyRequest(
+            @NotBlank String challengeId,
+            int offsetX,
+            @NotNull @Min(1) Integer totalTimeMs,
+            @NotEmpty List<@Valid SlideTrackPoint> tracks
+    ) {
+    }
+
+    public record SlideTrackPoint(
+            @Min(0) int x,
+            @Min(0) int y,
+            @Min(0) int t
     ) {
     }
 
@@ -28,9 +62,31 @@ public final class AuthDtos {
     ) {
     }
 
+    public record AdminLoginRequest(
+            @NotBlank String username,
+            @NotBlank String password
+    ) {
+    }
+
     public record LoginResponse(
             String userId,
             String accessToken,
+            String refreshToken
+    ) {
+    }
+
+    public record RefreshRequest(
+            @NotBlank String refreshToken
+    ) {
+    }
+
+    public record RefreshResponse(
+            String accessToken,
+            String refreshToken
+    ) {
+    }
+
+    public record LogoutRequest(
             String refreshToken
     ) {
     }

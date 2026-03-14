@@ -16,21 +16,17 @@ public class RedisQueryCacheService implements QueryCacheService {
     }
 
     @Override
-    public Optional<CachedBinding> get(String key) {
+    public Optional<CachedRealName> get(String key) {
         String value = stringRedisTemplate.opsForValue().get(key);
-        if (value == null || !value.contains(":")) {
+        if (value == null || value.isBlank()) {
             return Optional.empty();
         }
-        String[] parts = value.split(":");
-        if (parts.length != 2) {
-            return Optional.empty();
-        }
-        return Optional.of(new CachedBinding("1".equals(parts[0]), "1".equals(parts[1])));
+        return Optional.of(new CachedRealName("1".equals(value.trim())));
     }
 
     @Override
-    public void put(String key, CachedBinding value, long ttlSeconds) {
-        String packed = (value.bankBound() ? "1" : "0") + ":" + (value.socialBound() ? "1" : "0");
+    public void put(String key, CachedRealName value, long ttlSeconds) {
+        String packed = value.verified() ? "1" : "0";
         stringRedisTemplate.opsForValue().set(key, packed, Duration.ofSeconds(ttlSeconds));
     }
 }

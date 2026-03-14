@@ -1,34 +1,48 @@
 package com.easyfamily.query.service;
 
 import com.easyfamily.query.config.QueryProperties;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class QueryRuntimeSettingsService {
 
     private final QueryProperties defaults;
-    private final AtomicReference<RuntimeSettings> runtime;
+    private final JdbcTemplate jdbcTemplate;
 
-    public QueryRuntimeSettingsService(QueryProperties defaults) {
+    public QueryRuntimeSettingsService(QueryProperties defaults, JdbcTemplate jdbcTemplate) {
         this.defaults = defaults;
-        this.runtime = new AtomicReference<>(new RuntimeSettings(
-                defaults.dailyQuotaPerUser(),
-                defaults.dailyQuotaPerPhone(),
-                defaults.dailyQuotaPerIp(),
-                defaults.preferRedisCache(),
-                defaults.providerKey(),
-                defaults.providerTimeoutMs(),
-                defaults.providerRetryTimes(),
-                defaults.providerCircuitFailureThreshold(),
-                defaults.providerCircuitOpenSeconds()
-        ));
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @PostConstruct
+    public void initDefaults() {
+        upsert("dailyQuotaPerUser", String.valueOf(defaults.dailyQuotaPerUser()));
+        upsert("dailyQuotaPerPhone", String.valueOf(defaults.dailyQuotaPerPhone()));
+        upsert("dailyQuotaPerIp", String.valueOf(defaults.dailyQuotaPerIp()));
+        upsert("preferRedisCache", String.valueOf(defaults.preferRedisCache()));
+        upsert("providerKey", defaults.providerKey());
+        upsert("providerTimeoutMs", String.valueOf(defaults.providerTimeoutMs()));
+        upsert("providerRetryTimes", String.valueOf(defaults.providerRetryTimes()));
+        upsert("providerCircuitFailureThreshold", String.valueOf(defaults.providerCircuitFailureThreshold()));
+        upsert("providerCircuitOpenSeconds", String.valueOf(defaults.providerCircuitOpenSeconds()));
     }
 
     public RuntimeSettings current() {
-        return runtime.get();
+        return new RuntimeSettings(
+                getInt("dailyQuotaPerUser", defaults.dailyQuotaPerUser()),
+                getInt("dailyQuotaPerPhone", defaults.dailyQuotaPerPhone()),
+                getInt("dailyQuotaPerIp", defaults.dailyQuotaPerIp()),
+                getBoolean("preferRedisCache", defaults.preferRedisCache()),
+                getString("providerKey", defaults.providerKey()),
+                getLong("providerTimeoutMs", defaults.providerTimeoutMs()),
+                getInt("providerRetryTimes", defaults.providerRetryTimes()),
+                getInt("providerCircuitFailureThreshold", defaults.providerCircuitFailureThreshold()),
+                getInt("providerCircuitOpenSeconds", defaults.providerCircuitOpenSeconds())
+        );
     }
 
     public RuntimeSettings update(
@@ -42,24 +56,27 @@ public class QueryRuntimeSettingsService {
             Integer providerCircuitFailureThreshold,
             Integer providerCircuitOpenSeconds
     ) {
-        RuntimeSettings current = runtime.get();
-        RuntimeSettings next = new RuntimeSettings(
-                dailyQuotaPerUser != null ? dailyQuotaPerUser : current.dailyQuotaPerUser(),
-                dailyQuotaPerPhone != null ? dailyQuotaPerPhone : current.dailyQuotaPerPhone(),
-                dailyQuotaPerIp != null ? dailyQuotaPerIp : current.dailyQuotaPerIp(),
-                preferRedisCache != null ? preferRedisCache : current.preferRedisCache(),
-                providerKey != null && !providerKey.isBlank() ? providerKey : current.providerKey(),
-                providerTimeoutMs != null ? providerTimeoutMs : current.providerTimeoutMs(),
-                providerRetryTimes != null ? providerRetryTimes : current.providerRetryTimes(),
-                providerCircuitFailureThreshold != null ? providerCircuitFailureThreshold : current.providerCircuitFailureThreshold(),
-                providerCircuitOpenSeconds != null ? providerCircuitOpenSeconds : current.providerCircuitOpenSeconds()
+        RuntimeSettings now = current();
+        upsert("dailyQuotaPerUser", String.valueOf(dailyQuotaPerUser != null ? dailyQuotaPerUser : now.dailyQuotaPerUser()));
+        upsert("dailyQuotaPerPhone", String.valueOf(dailyQuotaPerPhone != null ? dailyQuotaPerPhone : now.dailyQuotaPerPhone()));
+        upsert("dailyQuotaPerIp", String.valueOf(dailyQuotaPerIp != null ? dailyQuotaPerIp : now.dailyQuotaPerIp()));
+        upsert("preferRedisCache", String.valueOf(preferRedisCache != null ? preferRedisCache : now.preferRedisCache()));
+        upsert("providerKey", providerKey != null && !providerKey.isBlank() ? providerKey : now.providerKey());
+        upsert("providerTimeoutMs", String.valueOf(providerTimeoutMs != null ? providerTimeoutMs : now.providerTimeoutMs()));
+        upsert("providerRetryTimes", String.valueOf(providerRetryTimes != null ? providerRetryTimes : now.providerRetryTimes()));
+        upsert(
+                "providerCircuitFailureThreshold",
+                String.valueOf(providerCircuitFailureThreshold != null ? providerCircuitFailureThreshold : now.providerCircuitFailureThreshold())
         );
-        runtime.set(next);
-        return next;
+        upsert(
+                "providerCircuitOpenSeconds",
+                String.valueOf(providerCircuitOpenSeconds != null ? providerCircuitOpenSeconds : now.providerCircuitOpenSeconds())
+        );
+        return current();
     }
 
     public Map<String, Object> toMap() {
-        RuntimeSettings s = runtime.get();
+        RuntimeSettings s = current();
         return Map.of(
                 "dailyQuotaPerUser", s.dailyQuotaPerUser(),
                 "dailyQuotaPerPhone", s.dailyQuotaPerPhone(),
@@ -71,6 +88,47 @@ public class QueryRuntimeSettingsService {
                 "providerCircuitFailureThreshold", s.providerCircuitFailureThreshold(),
                 "providerCircuitOpenSeconds", s.providerCircuitOpenSeconds()
         );
+    }
+
+    private void upsert(String settingKey, String settingValue) {
+        jdbcTemplate.update(
+                """
+                        INSERT INTO runtime_settings(setting_key, setting_value, updated_at)
+                        VALUES (?, ?, CURRENT_TIMESTAMP)
+                        ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP
+                        """,
+                settingKey,
+                settingValue
+        );
+    }
+
+    private String getString(String settingKey, String defaultValue) {
+        String value = jdbcTemplate.query(
+                "SELECT setting_value FROM runtime_settings WHERE setting_key = ?",
+                rs -> rs.next() ? rs.getString(1) : null,
+                settingKey
+        );
+        return value == null ? defaultValue : value;
+    }
+
+    private int getInt(String settingKey, int defaultValue) {
+        try {
+            return Integer.parseInt(getString(settingKey, String.valueOf(defaultValue)));
+        } catch (Exception ex) {
+            return defaultValue;
+        }
+    }
+
+    private long getLong(String settingKey, long defaultValue) {
+        try {
+            return Long.parseLong(getString(settingKey, String.valueOf(defaultValue)));
+        } catch (Exception ex) {
+            return defaultValue;
+        }
+    }
+
+    private boolean getBoolean(String settingKey, boolean defaultValue) {
+        return Boolean.parseBoolean(getString(settingKey, String.valueOf(defaultValue)));
     }
 
     public record RuntimeSettings(

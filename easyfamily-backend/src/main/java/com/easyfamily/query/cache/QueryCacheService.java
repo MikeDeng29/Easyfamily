@@ -4,10 +4,10 @@ import java.util.Optional;
 
 public interface QueryCacheService {
 
-    Optional<CachedBinding> get(String key);
+    Optional<CachedRealName> get(String key);
 
-    void put(String key, CachedBinding value, long ttlSeconds);
+    void put(String key, CachedRealName value, long ttlSeconds);
 
-    record CachedBinding(boolean bankBound, boolean socialBound) {
+    record CachedRealName(boolean verified) {
     }
 }

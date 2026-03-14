@@ -4,8 +4,8 @@ public interface BindingQueryProvider {
 
     String key();
 
-    ProviderResult queryBinding(String phone, String queryType);
+    ProviderResult verifyRealName(String phone, String name, String idCardNo);
 
-    record ProviderResult(boolean bankBound, boolean socialBound, String providerName) {
+    record ProviderResult(boolean verified, String providerName) {
     }
 }

@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -33,6 +34,7 @@ public class JwtService {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(userId)
+                .id(UUID.randomUUID().toString())
                 .claims(Map.of("phone", phone, "tokenType", "access"))
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(accessTokenMinutes * 60L)))
@@ -44,6 +46,7 @@ public class JwtService {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(userId)
+                .id(UUID.randomUUID().toString())
                 .claims(Map.of("phone", phone, "tokenType", "refresh"))
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(refreshTokenDays * 24L * 3600L)))

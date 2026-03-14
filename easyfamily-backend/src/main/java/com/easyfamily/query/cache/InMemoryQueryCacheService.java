@@ -13,7 +13,7 @@ public class InMemoryQueryCacheService implements QueryCacheService {
     private final Map<String, CachedEntry> cache = new ConcurrentHashMap<>();
 
     @Override
-    public Optional<CachedBinding> get(String key) {
+    public Optional<CachedRealName> get(String key) {
         CachedEntry entry = cache.get(key);
         if (entry == null || Instant.now().isAfter(entry.expiredAt())) {
             return Optional.empty();
@@ -22,10 +22,10 @@ public class InMemoryQueryCacheService implements QueryCacheService {
     }
 
     @Override
-    public void put(String key, CachedBinding value, long ttlSeconds) {
+    public void put(String key, CachedRealName value, long ttlSeconds) {
         cache.put(key, new CachedEntry(value, Instant.now().plusSeconds(ttlSeconds)));
     }
 
-    private record CachedEntry(CachedBinding value, Instant expiredAt) {
+    private record CachedEntry(CachedRealName value, Instant expiredAt) {
     }
 }

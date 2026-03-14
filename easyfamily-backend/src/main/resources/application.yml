@@ -1,33 +1,40 @@
 spring:
   application:
     name: easyfamily
+  config:
+    import: optional:file:${EASYFAMILY_VAULT_FILE:./.vault.local.properties}
   datasource:
-    url: jdbc:h2:mem:easyfamily;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/easyfamily?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: none
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
+        dialect: org.hibernate.dialect.MySQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
 
 server:
   port: 8080
 
 easyfamily:
   security:
-    jwt-secret: "replace-with-strong-secret-replace-with-strong-secret"
+    jwt-secret: ${EASYFAMILY_JWT_SECRET:replace-with-strong-secret-replace-with-strong-secret}
     access-token-minutes: 30
     refresh-token-days: 7
+    admin-username: admin
+    admin-password: ${EASYFAMILY_ADMIN_PASSWORD:Trump@666}
   query:
     cache-ttl-seconds: 86400
-    daily-quota-per-user: 10
+    daily-quota-per-user: 3
     daily-quota-per-phone: 30
     daily-quota-per-ip: 100
     prefer-redis-cache: true
-    provider-key: aliyun-market
+    provider-key: simulated
     provider-timeout-ms: 1500
     provider-retry-times: 1
     provider-circuit-failure-threshold: 5
@@ -35,4 +42,7 @@ easyfamily:
     aliyun-market:
       base-url: "https://example.aliyun-market.com"
       path: "/phone/binding/query"
-      app-code: "replace-with-real-appcode"
+      app-code: ${ALIYUN_MARKET_APP_CODE:replace-with-real-appcode}
+  report:
+    read-from-metric-table: true
+    backfill-from-memory-on-empty: true

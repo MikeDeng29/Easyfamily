@@ -23,6 +23,18 @@ paths:
       responses:
         "200":
           description: ok
+  /api/v1/auth/refresh:
+    post:
+      summary: Refresh access token by refresh token
+      responses:
+        "200":
+          description: ok
+  /api/v1/auth/logout:
+    post:
+      summary: Logout and revoke access/refresh tokens
+      responses:
+        "200":
+          description: ok
   /api/v1/query/phone-binding:
     post:
       summary: Query bank/social binding by phone
@@ -32,6 +44,24 @@ paths:
   /api/v1/phones/mine:
     get:
       summary: Get current user phone list
+      responses:
+        "200":
+          description: ok
+  /api/v1/phones/bind:
+    post:
+      summary: Bind secondary phone with SMS verification
+      responses:
+        "200":
+          description: ok
+  /api/v1/phones/unbind:
+    post:
+      summary: Unbind a non-primary phone
+      responses:
+        "200":
+          description: ok
+  /api/v1/phones/primary:
+    post:
+      summary: Set one bound phone as primary
       responses:
         "200":
           description: ok
