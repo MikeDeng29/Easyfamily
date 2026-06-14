@@ -62,6 +62,32 @@ This document defines the baseline regression checks for the MVP scope.
   - App launches successfully
   - No crash/ANR traces in logcat during smoke window
 
+### R-006 SMS Login with Auto-Provisioned Account
+
+- **Goal**: A phone number with no pre-existing account can log in directly — the account is created implicitly on first login (no separate registration step).
+- **Precondition**: Backend reachable at `$BASE` (e.g. `http://47.102.126.67:8080`); `easyfamily.sms.mock-code` configured (default `123456`).
+- **Steps**:
+  1. `POST $BASE/api/v1/auth/captcha/verify` with `{"captchaProvider":"mock","ticket":"e2e"}` → capture `data.captchaToken`
+  2. `POST $BASE/api/v1/auth/sms/send` with `{"phone":"13800000000","captchaToken":"<token>"}` (fixed test phone — Aliyun rejects arbitrary non-real numbers, so a brand-new number can only be exercised locally with `easyfamily.sms.provider=mock`)
+  3. `POST $BASE/api/v1/auth/login` with `{"phone":"13800000000","smsCode":"123456"}`
+- **Expected**:
+  - All three calls return `"code":"OK"`
+  - Login response `data.userId == "U13800000000"` and includes non-empty `accessToken`/`refreshToken`
+  - `GET $BASE/api/v1/phones/mine` with the new `accessToken` returns `"code":"OK"` with the phone listed (account usable immediately, no separate signup needed)
+
+### R-007 Bill Feature Basic Usability
+
+- **Goal**: A logged-in user can create a bill, see it in the list, and have it reflected in stats.
+- **Precondition**: Valid `accessToken` from R-006 (or any test account).
+- **Steps**:
+  1. `POST $BASE/api/v1/bill` with `{"category":"餐饮","amount":20.00,"note":"e2e smoke","billedAt":"<today>"}`, capture `data.id`
+  2. `GET $BASE/api/v1/bill` → confirm the created bill appears
+  3. `GET $BASE/api/v1/bill/stats?month=<yyyy-MM>` → confirm `总支出`/`byCategory.餐饮` includes the 20.00
+  4. `DELETE $BASE/api/v1/bill/{id}` → cleanup
+- **Expected**:
+  - Steps 1-3 return `"code":"OK"` with the bill visible in both the list and stats
+  - Step 4 returns `"code":"OK"` and the bill no longer appears in step-2's list on re-check
+
 ## Recommended Execution Order
 
 1. Run `scripts/regression_smoke.sh`
