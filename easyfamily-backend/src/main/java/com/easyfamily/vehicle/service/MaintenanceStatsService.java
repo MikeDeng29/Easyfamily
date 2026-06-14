@@ -28,11 +28,13 @@ public class MaintenanceStatsService {
             return new MaintenanceStats(BigDecimal.ZERO, 0, 0, java.util.List.of());
         }
 
-        // Total stats
+        // Total stats. total_cost is summed from maintenance_records directly (not via
+        // the items join below) to avoid double-counting records that have multiple items.
         var summary = jdbcTemplate.queryForObject(
                 """
                         SELECT
-                            COALESCE(SUM(r.total_cost), 0) AS total_cost,
+                            COALESCE((SELECT SUM(r.total_cost) FROM maintenance_records r
+                                      WHERE r.user_id = ? AND r.vehicle_id = ?), 0) AS total_cost,
                             COUNT(DISTINCT r.id) AS total_records,
                             COUNT(i.id) AS total_items
                         FROM maintenance_records r
@@ -44,6 +46,8 @@ public class MaintenanceStatsService {
                         rs.getLong("total_records"),
                         rs.getLong("total_items")
                 },
+                userId,
+                vehicleId,
                 userId,
                 vehicleId
         );
