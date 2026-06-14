@@ -363,6 +363,45 @@ paths:
         '401':
           description: Missing/invalid access token
 
+  /api/v1/memory:
+    get:
+      tags: [Memory]
+      summary: List current user's saved AI assistant memories (most recent first)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseMemoryList'
+        '401':
+          description: Missing/invalid access token
+
+  /api/v1/memory/{id}:
+    delete:
+      tags: [Memory]
+      summary: Delete one of the current user's AI assistant memories
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseVoid'
+        '401':
+          description: Missing/invalid access token
+
   /api/v1/admin/reports/dau:
     get:
       tags: [Admin]
@@ -646,6 +685,35 @@ components:
           items:
             $ref: '#/components/schemas/FamilyMemberItem'
       required: [code, message, data]
+
+    ApiResponseMemoryList:
+      type: object
+      properties:
+        code: { type: string, example: OK }
+        message: { type: string, example: success }
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemoryItem'
+      required: [code, message, data]
+
+    MemoryItem:
+      type: object
+      description: A durable fact the AI assistant (青鸟) has remembered about the user
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 42
+        content:
+          type: string
+          example: 用户家里有一只叫旺财的狗
+        createdAt:
+          type: integer
+          format: int64
+          description: Epoch milliseconds
+          example: 1772901500000
+      required: [id, content, createdAt]
 
     CaptchaVerifyRequest:
       type: object

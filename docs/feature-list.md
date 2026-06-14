@@ -20,5 +20,20 @@
 | Android App | 首页 | 登录页面 | 手机号登录、人机校验、获取验证码、登录 | 已完成 | 2026-03-07 | 已优化输入框与按钮可用性 |
 | Android App | 首页 | 绑定查询 | 登录后在首页执行手机号绑定查询 | 已完成 | 2026-03-07 | 调用后端查询接口展示结果 |
 | Android App | 我的 | 手机号管理 | 在“我的”菜单管理绑定手机号 | 已完成 | 2026-03-07 | 已完成一级菜单：首页/我的 |
+| 后端 API | 账单管理 | 账单 CRUD | 创建/查询/更新/删除账单（餐饮/住房/交通等分类） | 已完成 | 2026-06-13 | `/api/v1/bill` |
+| 后端 API | 账单管理 | 账单统计 | 按月/分类汇总支出 | 已完成 | 2026-06-13 | `/api/v1/bill/stats` |
+| 后端 API | AI 对话 | 账单意图识别 | AI 识别账单录入意图并生成结构化确认标记 | 已完成 | 2026-06-13 | ChatController system prompt 更新 |
+| 后端 API | AI 对话 | 用户记忆系统-CRUD | 持久化记忆查询/删除，支持跨会话长期记忆（仅服务端内部使用，不对客户端开放管理入口） | 已完成 | 2026-06-14 | `GET /api/v1/memory`、`DELETE /api/v1/memory/{id}`，`user_memory` 表（V5 迁移） |
+| 后端 API | AI 对话 | 用户记忆系统-自动提取注入 | 对话中自动识别长期信息并静默写入记忆，回复时注入最近记忆作为上下文，提升 DeepSeek 对用户的理解，不向用户展示记忆内容 | 已完成 | 2026-06-14 | ChatController 解析 `MEMORY_SAVE` 标记写入记忆，并在 system prompt 中注入最近 20 条记忆；产品决策：记忆功能为后端静默运行，不规划记忆管理 UI |
+| Android App | 账单管理 | 对话录入账单 | 在 AI 对话界面识别账单意图，确认后自动记录 | 已完成 | 2026-06-13 | ChatScreen 确认卡片 + ChatViewModel 解析 |
+| Android App | 账单管理 | 账单列表 | 在「我的 → 账单」查看历史账单，支持删除 | 已完成 | 2026-06-13 | BillListScreen |
+| Android App | 账单管理 | 账单统计 | 分类支出占比统计与进度条展示 | 已完成 | 2026-06-13 | BillStatsScreen |
+| iOS App | 首页 | 登录页面 | 手机号登录、滑动验证码、获取验证码、登录 | 已完成 | 2026-06-14 | SwiftUI `LoginView` + `SlideCaptchaView` |
+| iOS App | 首页 | AI 对话 | 对话式交互，支持账单意图识别与确认录入 | 已完成 | 2026-06-14 | `ChatView`，SSE 流式响应 + 账单确认卡片 |
+| iOS App | 我的 | 大家庭 | 展示本人与家庭成员（脱敏手机号） | 已完成 | 2026-06-14 | `FamilyView` |
+| iOS App | 我的 | 手机号管理 | 绑定/解绑/设为主号 | 已完成 | 2026-06-14 | `PhoneView` |
+| iOS App | 我的 | 实名查询 | 手机号 + 姓名 + 身份证号实名校验 | 已完成 | 2026-06-14 | `QueryView` |
+| iOS App | 账单管理 | 账单列表与统计 | 查看历史账单、删除、分类统计 | 已完成 | 2026-06-14 | `BillListView` + `BillStatsView` |
+| iOS App | 车辆管理 | 车辆与保养记录 | 车辆增删、保养记录增删、花费统计 | 已完成 | 2026-06-14 | `VehicleListView`/`RecordListView`/`VehicleStatsView` |
 | 跨端/运维 | 回归验证 | 冒烟脚本 | 一键执行后端/管理端/Android 回归 | 已完成 | 2026-03-07 | `scripts/regression_smoke.sh` |
 | 跨端/运维 | 上线准备 | 安全与发布清单 | 日志、告警、脱敏、合规、回滚检查 | 已完成 | 2026-03-07 | `docs/operations-go-live-checklist.md` |

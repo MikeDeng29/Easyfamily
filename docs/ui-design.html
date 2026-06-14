@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>青鸟 App — AI Native UI 设计稿 v0.2</title>
+<style>
+/* ═══════════════════════════════════ Design Tokens ═══════════════════ */
+:root {
+  --p:    #E8548A;  --p-c: #FFD6E8;  --on-p: #fff;  --on-pc: #3D001E;
+  --p-dk: #A8004A;
+  --s:    #38AEDE;  --s-c: #C2EEFF;  --on-s: #fff;
+  --ai:   #E8720C;  --ai-c: #FEF0E3;
+  --err:  #D63B3B;  --err-c:#FDEAEA;
+  --sur:  #FFF4F8;  --sur2: #FFEAF2; --sur3: #F5C6DC;
+  --on-sur: #251520; --on-surv: #77556A;
+  --out:  #CBA3BA;
+  --chat-user: #FFD6E8;
+  --chat-ai:   #FFFFFF;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+  background: #0F1117;
+  min-height: 100vh;
+  padding: 48px 40px 80px;
+  color: #fff;
+}
+
+/* ── Doc header ── */
+.doc-header {
+  max-width: 1400px; margin: 0 auto 16px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+}
+.doc-title { font-size: 32px; font-weight: 700; letter-spacing: 1px; }
+.doc-title .pink { color: #FF8CB8; }
+.doc-title .blue { color: #38AEDE; }
+.doc-meta { font-size: 13px; color: #5A4A52; line-height: 1.8; text-align: right; }
+
+.principle-bar {
+  max-width: 1400px; margin: 0 auto 52px;
+  background: #1A0E14;
+  border: 1px solid #3A1A28;
+  border-radius: 12px;
+  padding: 16px 24px;
+  display: flex; gap: 32px; align-items: center; flex-wrap: wrap;
+}
+.principle {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: #C08090;
+}
+.principle strong { color: #FF8CB8; font-weight: 600; }
+.principle-icon { font-size: 18px; }
+
+/* ── Section ── */
+.flow-section { max-width: 1900px; margin: 0 auto 72px; }
+.flow-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #5A4A52; margin-bottom: 6px; }
+.flow-name { font-size: 20px; font-weight: 600; margin-bottom: 8px; padding-bottom: 12px; border-bottom: 1px solid #1E1018; }
+.flow-name em { font-style: normal; color: var(--p); }
+.flow-name .ai-native-note { font-size: 12px; color: var(--ai); background: var(--ai-c); color: var(--ai); border-radius: 20px; padding: 2px 10px; margin-left: 8px; vertical-align: middle; font-weight: 600; }
+.flow-desc { font-size: 13px; color: #5A4A52; margin-bottom: 20px; }
+
+.flow-row {
+  display: flex; align-items: flex-start; gap: 0;
+  overflow-x: auto; padding-bottom: 16px;
+}
+.flow-row::-webkit-scrollbar { height: 4px; }
+.flow-row::-webkit-scrollbar-thumb { background: #3A1A28; border-radius: 2px; }
+
+/* ── Phone ── */
+.phone-col { display: flex; flex-direction: column; align-items: center; gap: 12px; flex-shrink: 0; }
+.phone-caption { font-size: 12px; color: #5A4A52; text-align: center; max-width: 295px; line-height: 1.4; }
+.phone-caption strong { color: #D4A0BA; display: block; margin-bottom: 2px; font-size: 13px; }
+
+.phone {
+  width: 295px; height: 620px;
+  background: #090610;
+  border-radius: 38px; padding: 10px;
+  box-shadow: 0 0 0 1.5px #2A1525, 0 0 0 3px #090610, 0 24px 64px rgba(0,0,0,0.7), inset 0 0 0 1px #2D1520;
+  position: relative; flex-shrink: 0;
+}
+.phone::before {
+  content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+  width: 80px; height: 10px; background: #090610; border-radius: 0 0 8px 8px; z-index: 10;
+}
+.phone::after {
+  content: ''; position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+  width: 100px; height: 4px; background: #3A2030; border-radius: 2px;
+}
+.screen {
+  width: 271px; height: 568px;
+  background: var(--sur); border-radius: 30px;
+  overflow: hidden; position: relative; display: flex; flex-direction: column;
+}
+.screen.dark { background: #12090F; }
+.screen.white { background: #fff; }
+
+/* ── Connector ── */
+.flow-conn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 0 8px; margin-top: 290px; gap: 4px; flex-shrink: 0;
+}
+.flow-conn .arrow { font-size: 18px; color: #3A2030; }
+.flow-conn .trigger { font-size: 10px; color: #4A2A3A; text-align: center; max-width: 52px; line-height: 1.3; }
+
+/* ── Status bar ── */
+.sb { height: 26px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 11px; font-weight: 600; color: var(--on-sur); flex-shrink: 0; }
+.sb.light { color: rgba(255,255,255,0.9); }
+.sb-icons { display: flex; gap: 4px; align-items: center; font-size: 10px; }
+
+/* ── Top bars ── */
+.top-bar { height: 52px; display: flex; align-items: center; padding: 0 8px; gap: 4px; flex-shrink: 0; background: transparent; }
+.tb-back { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 18px; font-size: 16px; color: var(--on-sur); flex-shrink: 0; }
+.tb-title { font-size: 17px; font-weight: 500; color: var(--on-sur); flex: 1; padding-left: 4px; }
+.tb-action { font-size: 14px; padding: 0 8px; color: var(--p); font-weight: 600; }
+
+/* ── Bottom Nav ── */
+.bottom-nav { height: 62px; background: var(--sur); border-top: 1px solid var(--sur3); display: flex; align-items: center; flex-shrink: 0; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--on-surv); padding: 8px 0; }
+.nav-item.active { color: var(--p); }
+.nav-icon { font-size: 20px; line-height: 1; }
+.nav-pill { background: var(--p-c); border-radius: 16px; padding: 2px 18px; }
+.nav-label { font-size: 10px; font-weight: 500; }
+
+/* ── AI Input Bar ── */
+.ai-input-bar {
+  margin: 0 10px 10px;
+  background: #fff;
+  border-radius: 24px;
+  border: 1.5px solid var(--p-c);
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 8px 8px 14px;
+  box-shadow: 0 2px 12px rgba(232,84,138,0.1);
+  flex-shrink: 0;
+}
+.ai-input-placeholder { flex: 1; font-size: 13px; color: #C0A0B0; }
+.ai-mic-btn { width: 34px; height: 34px; border-radius: 17px; background: var(--p); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.ai-send-btn { width: 34px; height: 34px; border-radius: 17px; background: var(--p); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+
+/* ── Cards ── */
+.card { background: #fff; border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; }
+.card.pink-tint { background: #FFF4F8; }
+
+/* Proactive insight card */
+.insight-card {
+  margin: 5px 12px;
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(232,84,138,0.08);
+}
+.insight-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px 8px; }
+.insight-icon { font-size: 20px; }
+.insight-title { font-size: 13px; font-weight: 600; color: var(--on-sur); flex: 1; }
+.insight-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+.ib-high { background: var(--err-c); color: var(--err); }
+.ib-ai   { background: var(--ai-c); color: var(--ai); }
+.ib-info { background: var(--s-c); color: #005A80; }
+.insight-body { font-size: 11px; color: var(--on-surv); padding: 0 12px 8px; line-height: 1.5; }
+.insight-actions { display: flex; gap: 8px; padding: 0 12px 10px; }
+.ia-primary { font-size: 11px; font-weight: 600; color: var(--p); padding: 5px 12px; background: var(--p-c); border-radius: 20px; }
+.ia-ghost  { font-size: 11px; color: var(--on-surv); padding: 5px 12px; background: var(--sur2); border-radius: 20px; }
+
+/* Chat bubbles */
+.chat-area { flex: 1; overflow: hidden; padding: 8px 10px; display: flex; flex-direction: column; gap: 10px; }
+.chat-date { font-size: 10px; color: var(--out); text-align: center; margin: 4px 0; }
+
+.bubble-user { display: flex; justify-content: flex-end; }
+.bubble-user .bub { background: var(--p); color: #fff; border-radius: 16px 16px 4px 16px; padding: 8px 12px; font-size: 12px; max-width: 180px; line-height: 1.5; }
+
+.bubble-ai { display: flex; justify-content: flex-start; gap: 6px; align-items: flex-start; }
+.ai-avatar { width: 28px; height: 28px; border-radius: 14px; background: linear-gradient(135deg, var(--p-dk), var(--p)); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.bubble-ai .bub { background: #fff; color: var(--on-sur); border-radius: 4px 16px 16px 16px; padding: 8px 12px; font-size: 12px; max-width: 200px; line-height: 1.5; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+
+/* Tool card in chat */
+.tool-card {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid var(--sur3);
+  overflow: hidden;
+  margin-top: 4px;
+  max-width: 210px;
+}
+.tool-card-head { padding: 7px 10px; border-bottom: 1px solid var(--sur3); display: flex; align-items: center; gap: 6px; }
+.tool-card-title { font-size: 11px; font-weight: 600; color: var(--on-sur); flex: 1; }
+.tool-badge { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
+.tc-high { background: var(--err-c); color: var(--err); }
+.tc-ok   { background: var(--s-c); color: #005A80; }
+.tool-row { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-bottom: 1px solid #F8F0F4; }
+.tool-row:last-child { border-bottom: none; }
+.tool-row-label { font-size: 10px; color: var(--on-sur); flex: 1; }
+.tool-row-tag { font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 6px; }
+
+/* Quick replies */
+.quick-replies { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; max-width: 200px; }
+.qr { font-size: 10px; color: var(--p); border: 1px solid var(--p-c); border-radius: 12px; padding: 4px 8px; background: #fff; }
+
+/* AI thinking */
+.ai-thinking { display: flex; gap: 3px; align-items: center; padding: 8px 12px; }
+.dot { width: 6px; height: 6px; border-radius: 3px; background: var(--sur3); }
+
+/* Voice overlay */
+.voice-overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(170deg, #1A0510 0%, #280A1A 50%, #0A1020 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0;
+  border-radius: 30px;
+}
+.voice-bird { font-size: 36px; margin-bottom: 8px; }
+.voice-label { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 32px; letter-spacing: 0.5px; }
+.voice-circle-outer {
+  width: 100px; height: 100px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,84,138,0.3) 0%, rgba(232,84,138,0) 70%);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 4px;
+}
+.voice-circle-mid {
+  width: 76px; height: 76px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,84,138,0.5) 0%, rgba(232,84,138,0.1) 70%);
+  display: flex; align-items: center; justify-content: center;
+}
+.voice-circle-inner { width: 56px; height: 56px; border-radius: 50%; background: var(--p); display: flex; align-items: center; justify-content: center; font-size: 26px; }
+.waveform { display: flex; align-items: center; justify-content: center; gap: 3px; height: 36px; margin: 20px 0 10px; }
+.wv { border-radius: 2px; background: var(--p); }
+.live-text { font-size: 14px; color: #fff; font-weight: 500; text-align: center; padding: 0 20px; min-height: 40px; line-height: 1.5; }
+.live-text em { font-style: normal; color: #FF8CB8; }
+.voice-cancel { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 20px; padding: 8px 20px; }
+
+/* Badges */
+.badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; border-radius: 10px; padding: 0 5px; font-size: 10px; font-weight: 700; }
+.b-high { background: var(--err-c); color: var(--err); }
+.b-med  { background: var(--ai-c); color: var(--ai); }
+.b-low  { background: var(--s-c); color: #005A80; }
+
+/* List items */
+.list-item { display: flex; align-items: center; padding: 10px 12px; gap: 10px; background: #fff; }
+.li + .li { border-top: 1px solid var(--sur3); }
+.li-lead { width: 38px; height: 38px; border-radius: 19px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.li-main { flex: 1; min-width: 0; }
+.li-h { font-size: 13px; font-weight: 500; color: var(--on-sur); }
+.li-s { font-size: 11px; color: var(--on-surv); margin-top: 1px; }
+
+/* Avatar */
+.avatar { width: 38px; height: 38px; border-radius: 19px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: #fff; flex-shrink: 0; }
+
+/* Sec head */
+.sec-head { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--on-surv); padding: 10px 12px 5px; }
+
+/* Btn */
+.btn { height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; }
+.btn-p { background: var(--p); color: #fff; }
+.btn-t { background: var(--p-c); color: var(--on-pc); }
+.btn-o { border: 1.5px solid var(--out); color: var(--p); }
+
+/* Text field */
+.tf { height: 50px; background: var(--sur2); border-radius: 4px 4px 0 0; border-bottom: 2px solid var(--p); padding: 0 12px; display: flex; flex-direction: column; justify-content: center; }
+.tf-l { font-size: 10px; color: var(--p); font-weight: 500; }
+.tf-v { font-size: 14px; color: var(--on-sur); }
+.tf.idle { border-bottom-color: var(--out); }
+.tf.idle .tf-l { color: var(--on-surv); }
+
+/* Bottom sheet */
+.bsheet { position: absolute; bottom: 0; left: 0; right: 0; background: var(--sur); border-radius: 20px 20px 0 0; padding: 10px 14px 24px; box-shadow: 0 -4px 24px rgba(0,0,0,0.12); }
+.bs-handle { width: 32px; height: 4px; background: var(--sur3); border-radius: 2px; margin: 0 auto 14px; }
+
+/* Risk card */
+.risk-card { border-radius: 10px; padding: 10px 12px; margin: 6px 12px; }
+.rc-high { background: #FFF4F4; border-left: 3px solid var(--err); }
+.rc-med  { background: #FFF8F2; border-left: 3px solid var(--ai); }
+.rc-low  { background: #EAF6FF; border-left: 3px solid var(--s); }
+.rc-title { font-size: 11px; font-weight: 700; margin-bottom: 3px; }
+.rc-high .rc-title { color: var(--err); }
+.rc-med  .rc-title { color: var(--ai); }
+.rc-low  .rc-title { color: var(--s); }
+.rc-body { font-size: 10px; color: var(--on-sur); line-height: 1.5; }
+
+/* Chip */
+.chip { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--out); font-size: 11px; color: var(--on-sur); }
+.chip.sel { background: var(--p-c); border-color: var(--p); color: var(--on-pc); }
+
+/* AI native highlight */
+.ai-tag { display: inline-flex; align-items: center; gap: 3px; background: var(--ai-c); color: var(--ai); border-radius: 10px; padding: 2px 7px; font-size: 10px; font-weight: 700; }
+
+/* Onboarding splash */
+.splash-bg {
+  flex: 1;
+  background: linear-gradient(160deg, #A8004A 0%, var(--p) 55%, #38AEDE 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+}
+
+/* Tag P2 */
+.tag-p2 { display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 10px; background: #4A1A35; color: #38AEDE; vertical-align: middle; margin-left: 4px; }
+
+/* Notification dot */
+.notif-dot { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; border-radius: 4px; background: var(--err); border: 1.5px solid var(--sur); }
+
+/* Shimmer loading */
+.shimmer { background: linear-gradient(90deg, var(--sur2) 25%, var(--sur3) 50%, var(--sur2) 75%); background-size: 200% 100%; border-radius: 4px; }
+
+/* Menu day */
+.menu-day { background: #fff; border-radius: 10px; margin: 4px 12px; padding: 9px 11px; }
+.md-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.md-name { font-size: 12px; font-weight: 600; color: var(--on-sur); }
+.md-today { font-size: 9px; background: var(--p-c); color: var(--p); padding: 2px 6px; border-radius: 8px; font-weight: 600; }
+.md-meal { font-size: 10px; color: var(--on-surv); margin-bottom: 2px; }
+.md-meal span { color: var(--on-sur); font-weight: 500; }
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════ HEADER ══════════════════════════ -->
+<div class="doc-header">
+  <div>
+    <div class="doc-title">青鸟 <span class="pink">AI</span> <span class="blue">Native</span> 设计稿</div>
+    <div style="color:#5A4A52;font-size:14px;margin-top:4px">v0.2 · 2026-05-17 · AI 对话驱动 × 主动推送 × 语音一等公民</div>
+  </div>
+  <div class="doc-meta">
+    设计哲学：AI 是界面，不是功能<br>
+    平台：Android · Material3<br>
+    主色：玫瑰粉 #E8548A × 天蓝 #38AEDE<br>
+  </div>
+</div>
+
+<!-- principle bar -->
+<div class="principle-bar">
+  <div class="principle"><span class="principle-icon">🤖</span><div><strong>对话即界面</strong>主屏是 AI 助手，不是功能网格</div></div>
+  <div class="principle"><span class="principle-icon">🔔</span><div><strong>AI 主动推送</strong>不等用户问，小鸟主动呈现洞察</div></div>
+  <div class="principle"><span class="principle-icon">🎙️</span><div><strong>语音一等公民</strong>任意屏幕一键激活语音，全功能可语音完成</div></div>
+  <div class="principle"><span class="principle-icon">🃏</span><div><strong>工具卡内嵌对话</strong>银行卡/菜单/账单以卡片形式在对话中展示</div></div>
+  <div class="principle"><span class="principle-icon">👁️</span><div><strong>传统屏幕为次级</strong>详情页存在，但不是入口</div></div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     FLOW 1 — 认证
+════════════════════════════════════════════════════════════════ -->
+<div class="flow-section">
+  <div class="flow-label">Flow 01</div>
+  <div class="flow-name">认证流程 — <em>启动 → 手机号 → 验证码</em></div>
+  <div class="flow-desc">登录后直接进入 AI 主界面，不跳引导页</div>
+  <div class="flow-row">
+
+    <!-- S01 Splash -->
+    <div class="phone-col">
+      <div class="phone">
+        <div class="screen">
+          <div class="sb" style="position:absolute;top:10px;left:0;right:0;color:#fff;z-index:5">
+            <span>9:41</span><div class="sb-icons">📶 🔋</div>
+          </div>
+          <div class="splash-bg">
+            <div style="font-size:72px">🐦</div>
+            <div style="font-size:30px;font-weight:700;color:#fff;letter-spacing:3px">青鸟</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.65);letter-spacing:1.5px;margin-top:2px">AI 家庭管家</div>
+          </div>
+          <div style="padding:20px 18px;background:linear-gradient(160deg,#A8004A 60%,#38AEDE)">
+            <div style="font-size:12px;color:rgba(255,255,255,0.6);text-align:center;margin-bottom:14px">为家庭一家之主设计的 AI 伙伴</div>
+            <div class="btn btn-p" style="margin-bottom:8px">手机号登录</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);text-align:center">登录即同意用户协议与隐私政策</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption"><strong>S01 启动页</strong>粉→蓝渐变，品牌感强</div>
+    </div>
+
+    <div class="flow-conn"><div class="arrow">→</div><div class="trigger">点击登录</div></div>
+
+    <!-- S02 Phone -->
+    <div class="phone-col">
+      <div class="phone">
+        <div class="screen">
+          <div class="sb"><span>9:41</span><div class="sb-icons">📶 🔋</div></div>
+          <div class="top-bar"><div class="tb-back">←</div><div class="tb-title">登录</div></div>
+          <div style="padding:16px 16px 0;flex:1">
+            <div style="font-size:20px;font-weight:700;color:var(--on-sur);margin-bottom:4px">输入手机号</div>
+            <div style="font-size:12px;color:var(--on-surv);margin-bottom:24px">将发送短信验证码到此号码</div>
+            <div class="tf" style="margin-bottom:8px">
+              <div class="tf-l">手机号码</div>
+              <div class="tf-v" style="display:flex;align-items:center;gap:6px"><span style="color:var(--on-surv);font-size:12px">🇨🇳 +86</span><span style="color:var(--sur3)">|</span><span>138 0013 8000</span></div>
+            </div>
+            <!-- captcha -->
+            <div style="background:var(--sur2);border-radius:8px;padding:10px;margin-bottom:20px">
+              <div style="font-size:11px;color:var(--on-surv);margin-bottom:6px">图形验证码</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <div style="flex:1;background:var(--sur3);border-radius:6px;height:34px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--on-sur);letter-spacing:5px">A7K2</div>
+                <div style="font-size:11px;color:var(--p);font-weight:600">刷新</div>
+              </div>
+            </div>
+            <div class="btn btn-p">获取验证码</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption"><strong>S02 手机号输入</strong>图形验证码防刷</div>
+    </div>
+
+    <div class="flow-conn"><div class="arrow">→</div><div class="trigger">发送成功</div></div>
+
+    <!-- S03 OTP -->
+    <div class="phone-col">
+      <div class="phone">
+        <div class="screen">
+          <div class="sb"><span>9:41</span><div class="sb-icons">📶 🔋</div></div>
+          <div class="top-bar"><div class="tb-back">←</div><div class="tb-title">验证码</div></div>
+          <div style="padding:16px 16px 0;flex:1">
+            <div style="font-size:20px;font-weight:700;color:var(--on-sur);margin-bottom:4px">输入验证码</div>
+            <div style="font-size:12px;color:var(--on-surv);margin-bottom:28px">已发送至 138****8000</div>
+            <div style="display:flex;gap:8px;justify-content:center;margin-bottom:10px">
+              <div style="width:36px;height:46px;background:#fff;border-radius:8px;border:2px solid var(--p);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--on-sur)">8</div>
+              <div style="width:36px;height:46px;background:#fff;border-radius:8px;border:2px solid var(--p);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--on-sur)">8</div>
+              <div style="width:36px;height:46px;background:#fff;border-radius:8px;border:2px solid var(--p);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--on-sur)">8</div>
+              <div style="width:36px;height:46px;background:var(--sur2);border-radius:8px;border:2px solid var(--p);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--sur3)">—</div>
+              <div style="width:36px;height:46px;background:var(--sur2);border-radius:8px;border:1.5px solid var(--out)"></div>
+              <div style="width:36px;height:46px;background:var(--sur2);border-radius:8px;border:1.5px solid var(--out)"></div>
+            </div>
+            <div style="text-align:center;font-size:11px;color:var(--on-surv);margin-bottom:24px">58 秒后可重新发送</div>
+            <div style="height:3px;background:var(--sur3);border-radius:2px;margin-bottom:24px"><div style="width:42%;height:100%;background:var(--p);border-radius:2px"></div></div>
+            <div class="btn btn-t">确认登录</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption"><strong>S03 验证码</strong>6位数字，倒计时进度条</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     FLOW 2 — AI 原生主界面（核心设计）
+════════════════════════════════════════════════════════════════ -->
+<div class="flow-section">
+  <div class="flow-label">Flow 02 · 核心</div>
+  <div class="flow-name">AI 主界面 — <em>主动洞察 Feed + 对话输入 + 语音激活</em> <span class="ai-native-note">AI Native 核心</span></div>
+  <div class="flow-desc">首屏不是功能菜单，是 AI 小鸟主动推送的家庭洞察流。底部输入框是一切交互的起点——文字、语音、快捷指令都从这里出发。</div>
+  <div class="flow-row">
+
+    <!-- S04 AI Home -->
+    <div class="phone-col">
+      <div class="phone">
+        <div class="screen">
+          <div class="sb"><span>9:41</span><div class="sb-icons">📶 🔋</div></div>
+
+          <!-- Header greeting -->
+          <div style="padding:6px 12px 4px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:11px;color:var(--on-surv)">早上好</div>
+              <div style="font-size:16px;font-weight:700;color:var(--on-sur)">Mike 👋</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="position:relative">
+                <div style="font-size:22px">🔔</div>
+                <div style="position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:4px;background:var(--err);border:1.5px solid var(--sur)"></div>
+              </div>
+              <div class="avatar" style="width:32px;height:32px;border-radius:16px;font-size:12px;background:var(--p)">M</div>
+            </div>
+          </div>
+
+          <!-- Small AI label -->
+          <div style="padding:2px 12px 6px;display:flex;align-items:center;gap:6px">
+            <div style="width:6px;height:6px;border-radius:3px;background:var(--p);box-shadow:0 0 4px var(--p)"></div>
+            <div style="font-size:11px;color:var(--on-surv)">小鸟 正在为你监控家庭状况</div>
+          </div>
+
+          <!-- Insight cards feed -->
+          <!-- Card 1: HIGH risk -->
+          <div class="insight-card" style="border-left:3px solid var(--err)">
+            <div class="insight-header">
+              <div class="insight-icon">🚨</div>
+              <div class="insight-title">妈妈银行卡风险</div>
+              <div class="insight-badge ib-high">HIGH</div>
+            </div>
+            <div class="insight-body">6张绑定卡中2张超24个月未使用，需要确认是否注销。</div>
+            <div class="insight-actions">
+              <div class="ia-primary">查看详情</div>
+              <div class="ia-ghost">已知晓</div>
+            </div>
+          </div>
+
+          <!-- Card 2: Menu -->
+          <div class="insight-card" style="border-left:3px solid var(--s)">
+            <div class="insight-header">
+              <div class="insight-icon">🥦</div>
+              <div class="insight-title">本周菜单已生成</div>
+              <div class="insight-badge ib-info">AI 生成</div>
+            </div>
+            <div class="insight-body">根据家庭成员健康档案，已为本周7天生成菜单，含购物清单。</div>
+            <div class="insight-actions">
+              <div class="ia-primary" style="background:var(--s-c);color:#005A80">查看菜单</div>
+            </div>
+          </div>
+
+          <!-- Card 3: Spend insight -->
+          <div class="insight-card" style="border-left:3px solid var(--ai)">
+            <div class="insight-header">
+              <div class="insight-icon">💡</div>
+              <div class="insight-title">本月餐饮支出提醒</div>
+              <div class="insight-badge ib-ai">洞察</div>
+            </div>
+            <div class="insight-body">距月末14天，已消费 ¥1,240，预算 ¥2,000。<span class="tag-p2">P2</span></div>
+          </div>
+
+          <!-- AI Input bar -->
+          <div style="flex:1"></div>
+          <div style="padding:0 10px 4px">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;padding:0 2px">
+              <div style="font-size:10px;background:var(--p-c);color:var(--p);border-radius:12px;padding:4px 9px;font-weight:600">🏦 看银行卡</div>
+              <div style="font-size:10px;background:var(--s-c);color:#005A80;border-radius:12px;padding:4px 9px;font-weight:600">🥦 看菜单</div>
+              <div style="font-size:10px;background:var(--sur2);color:var(--on-surv);border-radius:12px;padding:4px 9px">🎙️ 记一笔</div>
+            </div>
+          </div>
+          <div class="ai-input-bar">
+            <div class="ai-input-placeholder">问问小鸟...</div>
+            <div class="ai-mic-btn">🎙️</div>
+          </div>
+
+          <!-- Bottom nav -->
+          <div class="bottom-nav">
+            <div class="nav-item active"><div class="nav-pill"><div class="nav-icon">🐦</div></div><div class="nav-label">小鸟</div></div>
+            <div class="nav-item"><div class="nav-icon">🌳</div><div class="nav-label">家庭</div></div>
+            <div class="nav-item"><div class="nav-icon">📋</div><div class="nav-label">记录</div></div>
+            <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">设置</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption"><strong>S04 AI 主界面</strong>主动洞察 Feed + 快捷入口 + 对话输入框。首屏没有功能按钮，只有 AI 主动给出的信息</div>
+    </div>
+
+    <div class="flow-conn"><div class="arrow">→</div><div class="trigger">点击输入<br>或发音</div></div>
+
+    <!-- S05 AI Chat — Bank card query -->
+    <div class="phone-col">
+      <div class="phone">
+        <div class="screen white">
+          <div class="sb"><span>9:41</span><div class="sb-icons">📶 🔋</div></div>
+          <div class="top-bar" style="background:#fff;box-shadow:0 1px 0 var(--sur3)">
+            <div class="tb-back">←</div>
+            <div style="display:flex;align-items:center;gap:6px;flex:1">
+              <div style="width:28px;height:28px;border-radius:14px;background:linear-gradient(135deg,#A8004A,#E8548A);display:flex;align-items:center;justify-content:center;font-size:14px">🐦</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--on-sur)">小鸟</div>
+                <div style="font-size:10px;color:var(--on-surv);display:flex;align-items:center;gap:3px"><div style="width:5px;height:5px;border-radius:3px;background:#3DAA6A"></div>在线</div>
+              </div>
+            </div>
+            <div class="ai-mic-btn" style="width:32px;height:32px;margin-right:4px">🎙️</div>
+          </div>
+
+          <div class="chat-area">
+            <div class="chat-date">今天 09:41</div>
+
+            <!-- AI first message -->
+            <div class="bubble-ai">
+              <div class="ai-avatar">🐦</div>
+              <div>
+                <div class="bub">早上好 Mike！我发现妈妈的银行卡有些异常，需要关注一下 🔍</div>
+              </div>
+            </div>
+
+            <!-- User -->
+            <div class="bubble-user">
+              <div class="bub">帮我看看妈妈的银行卡</div>
+            </div>
+
+            <!-- AI with tool card -->
+            <div class="bubble-ai">
+              <div class="ai-avatar">🐦</div>
+              <div>
+                <div class="bub" style="border-radius:4px 16px 16px 16px;padding:8px 10px 6px">
+                  查到了，妈妈（136****5566）目前绑定 <strong>6 张银行卡</strong>：
+                </div>
+                <!-- Tool card -->
+                <div class="tool-card">
+                  <div class="tool-card-head">
+                    <div style="font-size:14px">🏦</div>
+                    <div class="tool-card-title">绑定银行卡 · 6张</div>
+                    <div class="tool-badge tc-high">HIGH</div>
+                  </div>
+                  <div class="tool-row">
+                    <div class="tool-row-label">建设银行 ****4521<br><span style="font-size:9px;color:var(--on-surv)">休眠 28 个月</span></div>
+                    <div class="tool-row-tag tc-high" style="background:var(--err-c);color:var(--err)">异常</div>
+                  </div>
+                  <div class="tool-row">
+                    <div class="tool-row-label">农业银行 ****7733<br><span style="font-size:9px;color:var(--on-surv)">休眠 25 个月</span></div>
+                    <div class="tool-row-tag tc-high" style="background:var(--err-c);color:var(--err)">异常</div>
+                  </div>
+                  <div class="tool-row">
+                    <div class="tool-row-label">工商银行 ****1188<br><span style="font-size:9px;color:var(--on-surv)">正常使用</span></div>
+                    <div class="tool-row-tag tc-ok" style="background:var(--s-c);color:#005A80">正常</div>
+                  </div>
+                  <div style="padding:5px 10px;font-size:9px;color:var(--on-surv)">+3 张正常 · 点击查看全部</div>
+                </div>
+                <div class="bub" style="margin-top:4px;border-radius:4px 16px 16px 16px">
+                  建议处理这 2 张休眠卡，要我帮你设个提醒吗？
+                </div>
+                <div class="quick-replies">
+                  <div class="qr">是的，提醒我</div>
+                  <div class="qr">查看全部</div>
+                  <div class="qr">先标记</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ai-input-bar" style="margin:0 8px 6px">
+            <div class="ai-input-placeholder">继续问小鸟...</div>
+            <div class="ai-mic-btn" style="width:30px;height:30px;font-size:14px">🎙️</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption"><strong>S05 AI 对话</strong>银行卡查询以工具卡形式内嵌在对话流中，AI 给出行动建议，快捷回复降低用户操作成本</div>
+    </div>
+
+    <div class="flow-conn"><div class="arrow">→</div><div class="trigger">点击 🎙️</div></div>
+
+    <!-- S06 Voice Overlay -->
+    <div class="phone-col">
+      <div class="phone">
+        <div class="screen" style="background:#12090F;position:relative">
+          <!-- dim background -->
+          <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(170deg,#1A0510 0%,#280A1A 50%,#0A1020 100%);border-radius:30px"></div>
+
+          <div style="position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <div style="font-size:32px;margin-bottom:6px">🐦</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:36px;letter-spacing:0.5px">小鸟正在聆听...</div>
+
+            <!-- pulse rings -->
+            <div style="width:110px;height:110px;border-radius:55px;background:rgba(232,84,138,0.1);display:flex;align-items:center;justify-content:center">
+              <div style="width:86px;height:86px;border-radius:43px;background:rgba(232,84,138,0.2);display:flex;align-items:center;justify-content:center">
+                <div style="width:64px;height:64px;border-radius:32px;background:var(--p);display:flex;align-items:center;justify-content:center;font-size:28px">🎙️</div>
+              </div>
+            </div>
+
+            <!-- Waveform -->
+            <div style="display:flex;align-items:center;justify-content:center;gap:3px;height:40px;margin:18px 0 10px">
+              <div style="width:3px;height:10px;background:rgba(232,84,138,0.4);border-radius:2px"></div>
+              <div style="width:3px;height:18px;background:rgba(232,84,138,0.6);border-radius:2px"></div>
+              <div style="width:3px;height:32px;background:var(--p);border-radius:2px"></div>
+              <div style="width:3px;height:24px;background:rgba(232,84,138,0.85);border-radius:2px"></div>
+              <div style="width:3px;height:14px;background:rgba(232,84,138,0.55);border-radius:2px"></div>
+              <div style="width:3px;height:36px;background:var(--p);border-radius:2px"></div>
+              <div style="width:3px;height:20px;background:rgba(232,84,138,0.75);border-radius:2px"></div>
+              <div style="width:3px;height:28px;background:rgba(232,84,138,0.9);border-radius:2px"></div>
+              <div style="width:3px;height:16px;background:rgba(232,84,138,0.5);border-radius:2px"></div>
+              <div style="width:3px;height:22px;background:rgba(232,84,138,0.7);border-radius:2px"></div>
+              <div style="width:3px;height:12px;background:rgba(56,174,222,0.5);border-radius:2px"></div>
+              <div style="width:3px;height:26px;background:rgba(56,174,222,0.8);border-radius:2px"></div>
+            </div>
+
+            <!-- Live text -->
+            <div style="font-size:15px;color:#fff;font-weight:500;text-align:center;padding:0 24px;min-height:44px;line-height:1.5">
+              帮我看看 <span style="color:#FF8CB8">妈妈的银行卡</span>...
+            </div>
+
+            <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:20px">松开即发送 · 上划取消</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption"><strong>S06 语音激活</strong>全屏覆盖，粉蓝渐变背景，实时波形 + 实时文字识别，高亮关键词</div>
+    </div>
+
+    <div class="flow-conn"><div class="arrow">→</div><div class="trigger">松开后</div></div>
+
+    <!-- S07 AI Chat — Voice ledger -->
+    <div class="phone-col">
+      <div class="phone">
+        <div class="screen white">
+          <div class="sb"><span>9:41</span><div class="sb-icons">📶 🔋</div></div>
+          <div class="top-bar" style="background:#fff;box-shadow:0 1px 0 var(--sur3)">
+            <div class="tb-back">←</div>
+            <div style="display:flex;align-items:center;gap:6px;flex:1">
+              <div style="width:28px;height:28px;border-radius:14px;background:linear-gradient(135deg,#A8004A,#E8548A);display:flex;align-items:center;justify-content:center;font-size:14px">🐦</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--on-sur)">小鸟</div>
+                <div style="font-size:10px;color:var(--on-surv)">正在处理...</div>
+              </div>
+            </div>
+            <div class="ai-mic-btn" style="width:32px;height:32px;margin-right:4px">🎙️</div>
+          </div>
+
+          <div class="chat-area">
+            <!-- Previous context -->
+            <div class="bubble-user" style="opacity:0.5"><div class="bub" style="font-size:11px">帮我记一笔，买菜58块</div></div>
+
+            <!-- AI thinking -->
+            <div class="bubble-ai">
+              <div class="ai-avatar">🐦</div>
+              <div class="bub" style="padding:10px 14px">
+                <div style="display:flex;gap:4px;align-items:center">
+                  <div style="width:7px;height:7px;border-radius:4px;background:var(--sur3)"></div>
+                  <div style="width:7px;height:7px;border-radius:4px;background:var(--p-c)"></div>
+                  <div style="width:7px;height:7px;border-radius:4px;background:var(--p)"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI confirm card -->
+            <div class="bubble-ai">
+              <div class="ai-avatar">🐦</div>
+              <div>
+                <div class="bub" style="border-radius:4px 16px 16px 16px">
+                  好的！解析完成，请确认：
+                </div>
+                <!-- Ledger confirm card -->
+                <div class="tool-card" style="margin-top:4px;max-width:220px">
+                  <div class="tool-card-head" style="background:var(--ai-c)">
+                    <div style="font-size:14px">🛒</div>
+                    <div class="tool-card-title" style="color:var(--on-sur)">记账确认</div>
+                    <div class="ai-tag">AI 解析</div>
+                  </div>
+                  <div style="padding:10px 12px">
+                    <div style="font-size:24px;font-weight:700;color:var(--err);margin-bottom:6px">- ¥58.00</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                      <div><div style="font-size:9px;color:var(--on-surv)">分类</div><div style="font-size:12px;font-weight:600;color:var(--on-sur)">🛒 餐饮</div></div>
+                      <div><div style="font-size:9px;color:var(--on-surv)">日期</div><div style="font-size:12px;font-weight:600;color:var(--on-sur)">今天</div></div>
+                      <div><div style="font-size:9px;color:var(--on-surv)">备注</div><div style="font-size:12px;font-weight:600;color:var(--on-sur)">买菜</div></div>
+                    </div>
+                  </div>
+                  <div style="display:flex;border-top:1px solid var(--sur3)">
+                    <div style="flex:1;padding:8px;text-align:center;font-size:11px;color:var(--on-surv);border-right:1px solid var(--sur3)">重填</div>
+                    <div style="flex:2;padding:8px;text-align:center;font-size:11px;font-weight:700;color:var(--p)">✓ 确认记账</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ai-input-bar" style="margin:0 8px 6px">
+            <div class="ai-input-placeholder">继续问小鸟...</div>
+            <div class="ai-mic-btn" style="width:30px;height:30px;font-size:14px">🎙️</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption"><strong>S07 AI 记账确认</strong>语音记账以对话确认卡形式呈现，点"确认记账"即完成，无需跳转新页面 <span class="tag-p2">P2</span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     FLOW 3 — 银行卡监控（次级详情，从AI进入）
+════════════════════════════════════════════════════════════════ -->
+<div class="flow-section">
+  <div class="flow-label">Flow 03 · MVP · 次级页面</div>
+  <div class="flow-name">银行卡监控详情 — <em>从 AI 对话或通知进入</em></div>
+  <div class="flow-desc">用户不主动导航到监控页，而是通过 AI 洞察卡或推送通知跳转进来。这里是"深潜"页，AI 摘要在最顶部。</div>
+  <div class="flow-row">
+
+    <!-- S08 Monitor List -->
+    <div class="phone-col">
+      <div class="phone">
+        <div class="screen">
+          <div class="sb"><span>9:41</span><div class="sb-icons">📶 🔋</div></div>
+          <div class="top-bar" style="background:var(--sur)">
+            <div class="tb-back">←</div>
+            <div class="tb-title">银行卡监控</div>
+            <div class="tb-action" style="font-size:12px">立即扫描</div>
+          </div>
+
+          <!-- AI summary strip -->
+          <div style="background:linear-gradient(135deg,#A8004A,#E8548A);padding:10px 12px;display:flex;align-items:center;gap:8px">
+            <div style="font-size:18px">🤖</div>
+            <div style="flex:1">
+              <div style="font-size:10px;color:rgba(255,255,255,0.7);margin-bottom:2px">小鸟 · 上次扫描 今天 02:00</div>
+              <div style="font-size:12px;color:#fff;font-weight:500">3位成员中，妈妈有 HIGH 风险需处理</div>
+            </div>
+          </div>
+
+          <!-- Members -->
+          <div style="flex:1;overflow:hidden;padding:6px 0">
+            <div class="card" style="margin:0 10px 8px">
+              <div style="display:flex;align-items:center;gap:8px;padding:10px 12px 8px">
+                <div class="avatar" style="background:#D63B3B">妈</div>
+                <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--on-sur)">妈妈 · 李秀芳</div><div style="font-size:10px;color:var(--on-surv)">136****5566</div></div>
+                <div class="badge b-high">HIGH</div>
+              </div>
+              <div class="rc-high" style="margin:0 10px 10px">
+                <div class="rc-title">🚨 高风险</div>
+                <div class="rc-body">6张绑定卡，2张超24个月未使用</div>
+              </div>
+            </div>
+
+            <div class="card" style="margin:0 10px 8px">
+              <div style="display:flex;align-items:center;gap:8px;padding:10px 12px 8px">
+                <div class="avatar" style="background:#E8720C">爸</div>
+                <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--on-sur)">爸爸 · 张国强</div><div style="font-size:10px;color:var(--on-surv)">138****2233</div></div>
+                <div class="badge b-med">MED</div>
+              </div>
+              <div class="rc-med" style="margin:0 10px 10px">
+                <div class="rc-title">⚠️ 中等风险</div>
+                <div class="rc-body">工行卡 ****4521 休眠 18 个月</div>
+              </div>
+            </div>
+
+            <div class="card" style="margin:0 10px 8px">
+              <div style="display:flex;align-items:center;gap:8px;padding:10px 12px">
+                <div class="avatar" style="background:var(--p)">我</div>
+                <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--on-sur)">本人 · Mike</div><div style="font-size:10px;color:var(--on-surv)">139****8888</div></div>
+                <div class="badge b-low">LOW</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-nav">
+            <div class="nav-item active"><div class="nav-pill"><div class="nav-icon">🐦</div></div><div class="nav-label">小鸟</div></div>
+            <div class="nav-item"><div class="nav-icon">🌳</div><div class="nav-label">家庭</div></div>
+            <div class="nav-item"><div class="nav-icon">📋</div><div class="nav-label">记录</div></div>
+            <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">设置</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption"><strong>S08 监控列表</strong>顶部 AI 摘要条（粉色渐变），成员卡 + 风险摘要</div>
+    </div>
+
+    <div class="flow-conn"><div class="arrow">→</div><div class="trigger">点击妈妈</div></div>
+
+    <!-- S09 Risk Detail -->
+    <div class="phone-col">
+      <div class="phone">
+        <div class="screen">
+          <div class="sb"><span>9:41</span><div class="sb-icons">📶 🔋</div></div>
+          <div class="top-bar">
+            <div class="tb-back">←</div>
+            <div class="tb-title">妈妈 · 银行卡</div>
+          </div>
+
+          <!-- AI risk card - prominent -->
+          <div style="margin:6px 10px;background:linear-gradient(135deg,#5A0020,#A00040);border-radius:12px;padding:12px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+              <div class="ai-tag" style="background:rgba(255,255,255,0.2);color:#fff">🤖 AI 分析</div>
+              <div style="font-size:10px;color:rgba(255,255,255,0.5)">今天 02:00</div>
+            </div>
+            <div style="font-size:11px;color:#fff;line-height:1.6">【HIGH】共绑定6张银行卡，数量偏多。建设银行和农业银行卡超24个月未使用，属高风险休眠状态，建议本周前往银行确认注销。</div>
+          </div>
+
+          <!-- Card list -->
+          <div class="sec-head">绑定明细（6张）</div>
+          <div class="list-item li">
+            <div class="li-lead" style="background:var(--err-c);font-size:14px">🏦</div>
+            <div class="li-main"><div class="li-h">建设银行 ****4521</div><div class="li-s">休眠 28 个月</div></div>
+            <div class="badge b-high">异常</div>
+          </div>
+          <div class="list-item li">
+            <div class="li-lead" style="background:var(--err-c);font-size:14px">🏦</div>
+            <div class="li-main"><div class="li-h">农业银行 ****7733</div><div class="li-s">休眠 25 个月</div></div>
+            <div class="badge b-high">异常</div>
+          </div>
+          <div class="list-item li">
+            <div class="li-lead" style="background:var(--s-c);font-size:14px">🏦</div>
+            <div class="li-main"><div class="li-h">工商银行 ****1188</div><div class="li-s">正常使用</div></div>
+            <div class="badge b-low">正常</div>
+          </div>
+          <div style="padding:6px 10px">
+            <div style="font-size:11px;color:var(--on-surv);text-align:center">+3张正常银行卡</div>
+          </div>
+
+          <!-- Ask AI -->
+          <div style="margin:0 10px 6px;background:var(--p-c);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px">
+            <div style="font-size:16px">🐦</div>
+            <div style="flex:1;font-size:11px;color:var(--on-pc)">问小鸟：这2张卡怎么处理？</div>
+            <div style="font-size:12px;color:var(--p);font-weight:600">→</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption"><strong>S09 风险详情</strong>深红渐变 AI 摘要卡 + 逐卡列表 + 底部"问小鸟"快捷入口</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     FLOW 4 — 家庭成员管理
+════════════════════════════════════════════════════════════════ -->
+<div class="flow-section">
+  <div class="flow-label">Flow 04 · MVP</div>
+  <div class="flow-name">家庭管理 — <em>成员列表 → 添加成员</em></div>
+  <div class="flow-desc">通过底栏"家庭"进入。成员是其他功能的数据基础，AI 用成员档案生成菜单和监控报告。</div>
+  <div class="flow-row">
+
+    <!-- S10 Family -->
+    <div class="phone-col">
+      <div class="phone">
+        <div class="screen">
+          <div class="sb"><span>9:41</span><div class="sb-icons">📶 🔋</div></div>
+          <div class="top-bar"><div class="tb-title" style="padding-left:12px">家庭</div><div class="tb-action">+ 添加</div></div>
+
+          <div style="flex:1;overflow:hidden">
+            <div class="sec-head">大家庭 A · 父系</div>
+            <div class="list-item li">
+              <div class="avatar" style="background:#E8720C;font-size:13px">爸</div>
+              <div class="li-main"><div class="li-h">爸爸 · 张国强</div><div class="li-s">138****2233 · 父亲</div></div>
+              <div class="badge b-med" style="margin-right:4px">MED</div>
+              <div style="color:var(--on-surv);font-size:14px">›</div>
+            </div>
+            <div class="list-item li">
+              <div class="avatar" style="background:#D63B3B;font-size:13px">妈</div>
+              <div class="li-main"><div class="li-h">妈妈 · 李秀芳</div><div class="li-s">136****5566 · 母亲</div></div>
+              <div class="badge b-high" style="margin-right:4px">HIGH</div>
+              <div style="color:var(--on-surv);font-size:14px">›</div>
+            </div>
+
+            <div class="sec-head">小家庭</div>
+            <div class="list-item li">
+              <div class="avatar" style="background:var(--p);font-size:13px">我</div>
+              <div class="li-main"><div class="li-h">本人 · Mike</div><div class="li-s">139****8888 · PATRIARCH</div></div>
+              <div class="badge b-low" style="margin-right:4px">LOW</div>
+            </div>
+            <div class="list-item li">
+              <div class="avatar" style="background:var(--s);font-size:13px">妻</div>
+              <div class="li-main"><div class="li-h">妻子 · 王小燕</div><div class="li-s">133****7788 · 配偶</div></div>
+            </div>
+
+            <div class="sec-head">大家庭 B · 母系</div>
+            <div style="display:flex;align-items:center;justify-content:center;padding:12px;opacity:0.5">
+              <div class="btn btn-o" style="font-size:12px;padding:0 16px">＋ 添加外公外婆</div>
+            </div>
+          </div>
+
+          <div class="bottom-nav">
+            <div class="nav-item"><div class="nav-pill"><div class="nav-icon">🐦</div></div><div class="nav-label">小鸟</div></div>
+            <div class="nav-item active"><div class="nav-icon">🌳</div><div class="nav-label">家庭</div></div>
+            <div class="nav-item"><div class="nav-icon">📋</div><div class="nav-label">记录</div></div>
+            <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">设置</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption"><strong>S10 家庭成员</strong>按层级分组，风险 badge 直接可见，缺失成员提示添加</div>
+    </div>
+
+    <div class="flow-conn"><div class="arrow">→</div><div class="trigger">点击添加</div></div>
+
+    <!-- S11 Add member bottom sheet -->
+    <div class="phone-col">
+      <div class="phone">
+        <div class="screen" style="position:relative">
+          <div class="sb"><span>9:41</span><div class="sb-icons">📶 🔋</div></div>
+          <div class="top-bar"><div class="tb-title" style="padding-left:12px">家庭</div></div>
+          <div style="flex:1;background:rgba(0,0,0,0.35)"></div>
+
+          <div class="bsheet">
+            <div class="bs-handle"></div>
+            <div style="font-size:16px;font-weight:600;color:var(--on-sur);margin-bottom:14px">添加家庭成员</div>
+            <div class="tf idle" style="margin-bottom:8px"><div class="tf-l">姓名</div><div class="tf-v" style="color:var(--sur3)">请输入</div></div>
+            <div class="tf idle" style="margin-bottom:8px"><div class="tf-l">手机号</div><div class="tf-v" style="color:var(--sur3)">138 XXXX XXXX</div></div>
+            <div style="margin-bottom:10px">
+              <div style="font-size:11px;color:var(--on-surv);margin-bottom:6px">关系</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px">
+                <span class="chip sel">父亲</span><span class="chip">母亲</span><span class="chip">配偶</span><span class="chip">子女</span><span class="chip">岳父</span>
+              </div>
+            </div>
+            <div style="margin-bottom:14px">
+              <div style="font-size:11px;color:var(--on-surv);margin-bottom:6px">所属大家庭</div>
+              <div style="display:flex;gap:6px">
+                <span class="chip sel">大家庭A（父系）</span><span class="chip">大家庭B（母系）</span>
+              </div>
+            </div>
+            <div class="btn btn-p">确认添加</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption"><strong>S11 添加成员</strong>Bottom Sheet，最少字段，快速完成</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     FLOW 5 — AI 菜单（Phase 2，在对话中）
+════════════════════════════════════════════════════════════════ -->
+<div class="flow-section">
+  <div class="flow-label" style="color:#4A2A3A">Flow 05 · Phase 2</div>
+  <div class="flow-name">AI 菜单 — <em>在对话中触发 + 菜单详情页</em> <span class="tag-p2">Phase 2</span></div>
+  <div class="flow-desc">用户说"这周吃什么"，AI 返回菜单工具卡。点击"查看完整菜单"进入独立页。</div>
+  <div class="flow-row">
+
+    <!-- S12 Menu in chat -->
+    <div class="phone-col" style="opacity:0.85">
+      <div class="phone">
+        <div class="screen white">
+          <div class="sb"><span>9:41</span><div class="sb-icons">📶 🔋</div></div>
+          <div class="top-bar" style="background:#fff;box-shadow:0 1px 0 var(--sur3)">
+            <div class="tb-back">←</div>
+            <div style="display:flex;align-items:center;gap:6px;flex:1">
+              <div style="width:28px;height:28px;border-radius:14px;background:linear-gradient(135deg,#A8004A,#E8548A);display:flex;align-items:center;justify-content:center;font-size:14px">🐦</div>
+              <div><div style="font-size:13px;font-weight:600;color:var(--on-sur)">小鸟</div></div>
+            </div>
+          </div>
+
+          <div class="chat-area">
+            <div class="bubble-user"><div class="bub">这周吃什么</div></div>
+
+            <div class="bubble-ai">
+              <div class="ai-avatar">🐦</div>
+              <div>
+                <div class="bub" style="border-radius:4px 16px 16px 16px">已根据家庭成员健康档案生成本周菜单 🥦</div>
+                <!-- Menu tool card -->
+                <div class="tool-card" style="max-width:220px;margin-top:4px">
+                  <div class="tool-card-head" style="background:var(--s-c)">
+                    <div style="font-size:14px">🥦</div>
+                    <div class="tool-card-title">本周菜单预览</div>
+                    <div class="tool-badge" style="background:#fff;color:#005A80">AI生成</div>
+                  </div>
+                  <div class="menu-day">
+                    <div class="md-head"><div class="md-name">周六 · 今天</div><div class="md-today">今天</div></div>
+                    <div class="md-meal">午：<span>红烧肉 + 清炒菠菜</span></div>
+                    <div class="md-meal">晚：<span>番茄鸡蛋面</span></div>
+                  </div>
+                  <div class="menu-day" style="margin-bottom:0;border-radius:0;background:transparent;border-top:1px solid var(--sur3)">
+                    <div class="md-head"><div class="md-name">周日</div></div>
+                    <div class="md-meal">午：<span>清蒸鱼 + 蒜苗炒肉</span></div>
+                  </div>
+                  <div style="padding:7px 12px;font-size:11px;font-weight:600;color:var(--s);border-top:1px solid var(--sur3)">查看完整7日菜单 →</div>
+                </div>
+                <div class="quick-replies">
+                  <div class="qr">生成购物清单</div>
+                  <div class="qr">调整口味</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ai-input-bar" style="margin:0 8px 6px">
+            <div class="ai-input-placeholder">继续问小鸟...</div>
+            <div class="ai-mic-btn" style="width:30px;height:30px;font-size:14px">🎙️</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption"><strong>S12 菜单工具卡</strong>在对话中直接展示，无需跳转。支持快捷回复"生成购物清单"</div>
+    </div>
+
+    <div class="flow-conn"><div class="arrow">→</div><div class="trigger">点击查看<br>完整菜单</div></div>
+
+    <!-- S13 Menu Detail -->
+    <div class="phone-col" style="opacity:0.85">
+      <div class="phone">
+        <div class="screen">
+          <div class="sb"><span>9:41</span><div class="sb-icons">📶 🔋</div></div>
+          <div class="top-bar">
+            <div class="tb-back">←</div>
+            <div class="tb-title">每周菜单</div>
+            <div class="tb-action" style="color:var(--s)">购物清单</div>
+          </div>
+
+          <div style="padding:4px 10px 6px;display:flex;align-items:center;justify-content:space-between">
+            <div class="ai-tag">🤖 AI 生成 · 5.17—5.23</div>
+            <div style="font-size:11px;color:var(--s);font-weight:600">重新生成</div>
+          </div>
+
+          <div style="flex:1;overflow:hidden">
+            <div class="menu-day" style="border-left:3px solid var(--p)">
+              <div class="md-head"><div class="md-name">周六 5月17日</div><div class="md-today">今天</div></div>
+              <div class="md-meal">早：<span>小米粥 + 茶叶蛋</span></div>
+              <div class="md-meal">午：<span>红烧肉 + 清炒菠菜 + 米饭</span></div>
+              <div class="md-meal">晚：<span>番茄鸡蛋面</span></div>
+            </div>
+            <div class="menu-day">
+              <div class="md-head"><div class="md-name">周日 5月18日</div></div>
+              <div class="md-meal">早：<span>豆浆 + 全麦馒头</span></div>
+              <div class="md-meal">午：<span>清蒸鱼 + 蒜苗炒肉</span></div>
+              <div class="md-meal">晚：<span>蔬菜豆腐汤 + 杂粮饭</span></div>
+            </div>
+            <div class="menu-day" style="opacity:0.7">
+              <div class="md-head"><div class="md-name">周一 5月19日</div></div>
+              <div class="md-meal">午：<span>宫保鸡丁 + 米饭</span></div>
+              <div class="md-meal">晚：<span>冬瓜排骨汤</span></div>
+            </div>
+            <!-- Ask AI bar -->
+            <div style="margin:4px 10px;background:var(--p-c);border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:8px">
+              <div style="font-size:14px">🐦</div>
+              <div style="flex:1;font-size:11px;color:var(--on-pc)">有不喜欢的食材？告诉小鸟</div>
+              <div style="font-size:12px;color:var(--p);font-weight:600">→</div>
+            </div>
+          </div>
+
+          <div class="bottom-nav">
+            <div class="nav-item"><div class="nav-pill"><div class="nav-icon">🐦</div></div><div class="nav-label">小鸟</div></div>
+            <div class="nav-item"><div class="nav-icon">🌳</div><div class="nav-label">家庭</div></div>
+            <div class="nav-item active"><div class="nav-icon">📋</div><div class="nav-label">记录</div></div>
+            <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">设置</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-caption"><strong>S13 菜单详情</strong>底部"告诉小鸟"把用户引导回对话，形成循环 <span class="tag-p2">P2</span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     DESIGN TOKENS
+════════════════════════════════════════════════════════════════ -->
+<div style="max-width:1100px;margin:0 auto 48px">
+  <div style="color:#5A4A52;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">Design Tokens · 粉色 × 浅蓝</div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px">
+    <div style="display:flex;align-items:center;gap:8px;background:#1A0E14;border-radius:8px;padding:10px 14px"><div style="width:28px;height:28px;border-radius:6px;background:#E8548A"></div><div><div style="font-size:11px;color:#FFB3CC;font-weight:600">Primary Pink</div><div style="font-size:10px;color:#5A4A52">#E8548A</div></div></div>
+    <div style="display:flex;align-items:center;gap:8px;background:#1A0E14;border-radius:8px;padding:10px 14px"><div style="width:28px;height:28px;border-radius:6px;background:#FFD6E8"></div><div><div style="font-size:11px;color:#FFB3CC;font-weight:600">Pink Container</div><div style="font-size:10px;color:#5A4A52">#FFD6E8</div></div></div>
+    <div style="display:flex;align-items:center;gap:8px;background:#1A0E14;border-radius:8px;padding:10px 14px"><div style="width:28px;height:28px;border-radius:6px;background:#38AEDE"></div><div><div style="font-size:11px;color:#38AEDE;font-weight:600">Sky Blue</div><div style="font-size:10px;color:#5A4A52">#38AEDE</div></div></div>
+    <div style="display:flex;align-items:center;gap:8px;background:#1A0E14;border-radius:8px;padding:10px 14px"><div style="width:28px;height:28px;border-radius:6px;background:#C2EEFF"></div><div><div style="font-size:11px;color:#38AEDE;font-weight:600">Blue Container</div><div style="font-size:10px;color:#5A4A52">#C2EEFF</div></div></div>
+    <div style="display:flex;align-items:center;gap:8px;background:#1A0E14;border-radius:8px;padding:10px 14px"><div style="width:28px;height:28px;border-radius:6px;background:#E8720C"></div><div><div style="font-size:11px;color:#FFB3CC;font-weight:600">AI Accent</div><div style="font-size:10px;color:#5A4A52">#E8720C</div></div></div>
+    <div style="display:flex;align-items:center;gap:8px;background:#1A0E14;border-radius:8px;padding:10px 14px"><div style="width:28px;height:28px;border-radius:6px;background:#D63B3B"></div><div><div style="font-size:11px;color:#FFB3CC;font-weight:600">Error / HIGH</div><div style="font-size:10px;color:#5A4A52">#D63B3B</div></div></div>
+    <div style="display:flex;align-items:center;gap:8px;background:#1A0E14;border-radius:8px;padding:10px 14px"><div style="width:28px;height:28px;border-radius:6px;background:#FFF4F8"></div><div><div style="font-size:11px;color:#FFB3CC;font-weight:600">Surface</div><div style="font-size:10px;color:#5A4A52">#FFF4F8</div></div></div>
+    <div style="display:flex;align-items:center;gap:8px;background:#1A0E14;border-radius:8px;padding:10px 14px"><div style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#A8004A,#E8548A 60%,#38AEDE)"></div><div><div style="font-size:11px;color:#FFB3CC;font-weight:600">Brand Gradient</div><div style="font-size:10px;color:#5A4A52">Pink → Blue</div></div></div>
+  </div>
+
+  <!-- AI Interaction patterns -->
+  <div style="margin-top:24px;color:#5A4A52;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">AI 交互模式总结</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+    <div style="background:#1A0E14;border-radius:10px;padding:14px;border:1px solid #3A1A28">
+      <div style="font-size:16px;margin-bottom:6px">🔔</div>
+      <div style="font-size:12px;font-weight:600;color:#FFB3CC;margin-bottom:4px">主动推送 Proactive</div>
+      <div style="font-size:11px;color:#5A4A52;line-height:1.5">AI 监控后台变化，主动在首屏推送洞察卡，无需用户触发</div>
+    </div>
+    <div style="background:#1A0E14;border-radius:10px;padding:14px;border:1px solid #3A1A28">
+      <div style="font-size:16px;margin-bottom:6px">🃏</div>
+      <div style="font-size:12px;font-weight:600;color:#38AEDE;margin-bottom:4px">工具卡 Tool Cards</div>
+      <div style="font-size:11px;color:#5A4A52;line-height:1.5">银行卡查询、菜单、记账确认以结构化卡片内嵌在对话流，不跳转新页</div>
+    </div>
+    <div style="background:#1A0E14;border-radius:10px;padding:14px;border:1px solid #3A1A28">
+      <div style="font-size:16px;margin-bottom:6px">🎙️</div>
+      <div style="font-size:12px;font-weight:600;color:#FFB3CC;margin-bottom:4px">语音优先 Voice First</div>
+      <div style="font-size:11px;color:#5A4A52;line-height:1.5">任意页面一键激活全屏语音，实时识别 + AI 处理，全功能可声控</div>
+    </div>
+    <div style="background:#1A0E14;border-radius:10px;padding:14px;border:1px solid #3A1A28">
+      <div style="font-size:16px;margin-bottom:6px">↩️</div>
+      <div style="font-size:12px;font-weight:600;color:#38AEDE;margin-bottom:4px">回流对话 Loop Back</div>
+      <div style="font-size:11px;color:#5A4A52;line-height:1.5">每个详情页底部都有"问小鸟"入口，引导用户回到对话完成下一步</div>
+    </div>
+    <div style="background:#1A0E14;border-radius:10px;padding:14px;border:1px solid #3A1A28">
+      <div style="font-size:16px;margin-bottom:6px">⚡</div>
+      <div style="font-size:12px;font-weight:600;color:#FFB3CC;margin-bottom:4px">快捷指令 Shortcuts</div>
+      <div style="font-size:11px;color:#5A4A52;line-height:1.5">首页输入框上方展示高频指令，一触即发，不需要打字</div>
+    </div>
+    <div style="background:#1A0E14;border-radius:10px;padding:14px;border:1px solid #3A1A28">
+      <div style="font-size:16px;margin-bottom:6px">👁️</div>
+      <div style="font-size:12px;font-weight:600;color:#38AEDE;margin-bottom:4px">次级页面 Detail Pages</div>
+      <div style="font-size:11px;color:#5A4A52;line-height:1.5">监控/菜单/记录详情页存在，但不是入口——由 AI 推送或对话卡跳转进入</div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div style="max-width:1100px;margin:0 auto;text-align:center;color:#3A2030;font-size:12px;padding-top:24px;border-top:1px solid #1E1018">
+  青鸟 · AI Native UI 设计稿 v0.2 · 2026-05-17 · 13 屏 · 5 个流程
+</div>
+
+</body>
+</html>

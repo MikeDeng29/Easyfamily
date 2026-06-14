@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>青鸟 App — 系统设计文档 v0.1</title>
+<style>
+  :root {
+    --blue:    #1B6FBE;
+    --blue-lt: #E8F1FB;
+    --blue-dk: #0E4A85;
+    --green:   #3DAA6A;
+    --green-lt:#E6F6EE;
+    --orange:  #E8720C;
+    --orange-lt:#FEF0E3;
+    --purple:  #6C4BB0;
+    --purple-lt:#F0EAFA;
+    --red:     #D63B3B;
+    --red-lt:  #FDEAEA;
+    --bg:      #F4F7FB;
+    --surface: #FFFFFF;
+    --border:  #DDE4EF;
+    --text:    #1A2332;
+    --muted:   #6B7A99;
+    --tag-h:   14px;
+    --radius:  10px;
+    --shadow:  0 2px 12px rgba(27,111,190,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── Layout ── */
+  .page { max-width: 1080px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  /* ── Cover ── */
+  .cover {
+    background: linear-gradient(135deg, var(--blue-dk) 0%, var(--blue) 60%, #2e9aef 100%);
+    border-radius: 16px;
+    padding: 56px 48px 48px;
+    color: #fff;
+    margin-bottom: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::after {
+    content: '🐦';
+    position: absolute;
+    right: 48px; top: 40px;
+    font-size: 96px;
+    opacity: 0.18;
+  }
+  .cover .app-name { font-size: 42px; font-weight: 700; letter-spacing: 2px; }
+  .cover .app-en   { font-size: 18px; opacity: 0.7; margin-top: 2px; letter-spacing: 4px; }
+  .cover .tagline  { font-size: 20px; margin-top: 16px; opacity: 0.92; font-weight: 300; }
+  .cover .meta     { margin-top: 32px; display: flex; gap: 24px; font-size: 13px; opacity: 0.7; }
+  .cover .meta span::before { content: '▪ '; }
+
+  /* ── TOC ── */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    margin-bottom: 48px;
+    box-shadow: var(--shadow);
+  }
+  .toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 14px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 6px 0; }
+  .toc a  { color: var(--blue); text-decoration: none; font-size: 14px; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── Section headings ── */
+  .section { margin-bottom: 56px; }
+  .section-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .section-num {
+    background: var(--blue);
+    color: #fff;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .section-title { font-size: 22px; font-weight: 700; }
+  .section-sub   { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  h3 { font-size: 17px; font-weight: 600; margin: 28px 0 12px; color: var(--text); }
+  h4 { font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase;
+       letter-spacing: 0.8px; margin: 20px 0 8px; }
+
+  p  { margin-bottom: 10px; color: #2c3a50; }
+
+  /* ── Cards grid ── */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .card-icon { font-size: 28px; margin-bottom: 10px; }
+  .card-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .card-desc  { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  .card.blue   { border-top: 3px solid var(--blue); }
+  .card.green  { border-top: 3px solid var(--green); }
+  .card.orange { border-top: 3px solid var(--orange); }
+  .card.purple { border-top: 3px solid var(--purple); }
+
+  /* ── Feature sections ── */
+  .feature-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+  }
+  .feature-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .feature-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .fi-blue   { background: var(--blue-lt); }
+  .fi-green  { background: var(--green-lt); }
+  .fi-orange { background: var(--orange-lt); }
+  .fi-purple { background: var(--purple-lt); }
+
+  .feature-title { font-size: 17px; font-weight: 600; }
+  .feature-id    { font-size: 12px; color: var(--muted); font-family: monospace; }
+  .feature-body  { padding: 20px 24px; }
+
+  /* ── Screen flows ── */
+  .flow {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    overflow-x: auto;
+    padding: 16px 0;
+    margin: 8px 0 16px;
+  }
+  .flow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 110px;
+  }
+  .screen-box {
+    width: 96px; height: 160px;
+    background: #F7F9FC;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 10px 6px;
+    position: relative;
+    font-size: 11px;
+    text-align: center;
+    color: var(--text);
+    gap: 4px;
+  }
+  .screen-box .screen-bar {
+    width: 40px; height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    margin-bottom: 6px;
+  }
+  .screen-box .screen-title {
+    font-size: 10px; font-weight: 600;
+    color: var(--blue);
+    line-height: 1.3;
+  }
+  .screen-box .screen-lines { width: 100%; margin-top: 6px; }
+  .screen-box .line {
+    height: 5px; background: #E0E7F0;
+    border-radius: 2px; margin: 3px 4px;
+  }
+  .screen-box .line.short { width: 60%; }
+  .screen-box .btn-mock {
+    margin-top: auto;
+    width: 70%; height: 14px;
+    border-radius: 4px;
+    background: var(--blue);
+    opacity: 0.7;
+  }
+  .screen-label {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    max-width: 100px;
+    line-height: 1.3;
+  }
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 2px;
+    margin-top: 80px;
+    color: var(--muted);
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .flow-arrow.tap::after  { content: '→'; }
+  .flow-arrow.back::after { content: '←'; color: var(--blue); }
+
+  /* screen variants */
+  .screen-box.ai-glow { border-color: var(--orange); background: var(--orange-lt); }
+  .screen-box.green-glow { border-color: var(--green); background: var(--green-lt); }
+  .screen-box.purple-glow { border-color: var(--purple); background: var(--purple-lt); }
+
+  /* ── Tables ── */
+  .api-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  .api-table th {
+    background: #F0F4FA; text-align: left;
+    padding: 10px 12px; font-size: 12px;
+    font-weight: 600; letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border);
+    color: var(--muted);
+  }
+  .api-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .api-table tr:last-child td { border-bottom: none; }
+  .api-table tr:hover td { background: #F8FAFF; }
+
+  code {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 12px;
+    background: #EEF2FA;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--blue-dk);
+  }
+  .method { font-weight: 700; font-family: monospace; font-size: 12px; }
+  .method.get    { color: var(--green); }
+  .method.post   { color: var(--blue); }
+  .method.delete { color: var(--red); }
+
+  /* ── Tag pills ── */
+  .tag {
+    display: inline-block;
+    font-size: 11px; font-weight: 600;
+    padding: 2px 8px; border-radius: 20px;
+    margin-right: 4px; vertical-align: middle;
+  }
+  .tag.ai     { background: var(--orange-lt); color: var(--orange); }
+  .tag.mvp    { background: var(--blue-lt);   color: var(--blue); }
+  .tag.later  { background: #F0F0F0;           color: #888; }
+  .tag.high   { background: var(--red-lt);    color: var(--red); }
+  .tag.medium { background: var(--orange-lt); color: var(--orange); }
+  .tag.low    { background: var(--green-lt);  color: var(--green); }
+
+  /* ── Two-col layout ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── Tech stack ── */
+  .stack-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  .stack-item .stack-icon { font-size: 22px; flex-shrink: 0; }
+  .stack-item .stack-name { font-size: 14px; font-weight: 600; }
+  .stack-item .stack-desc { font-size: 12px; color: var(--muted); }
+
+  /* ── Architecture box ── */
+  .arch-box {
+    background: #0E1A2B;
+    border-radius: var(--radius);
+    padding: 28px;
+    color: #c8d8f0;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+  .arch-box .c-blue   { color: #7ec8f0; }
+  .arch-box .c-green  { color: #7edda0; }
+  .arch-box .c-orange { color: #f0c070; }
+  .arch-box .c-muted  { color: #5a7090; }
+  .arch-box .c-white  { color: #edf4ff; font-weight: 600; }
+
+  /* ── Data model ── */
+  .model-box {
+    background: #F7F9FC;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 13px;
+    font-family: monospace;
+    margin: 8px 0;
+  }
+  .model-box .entity-name { color: var(--blue); font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+  .model-box .field { display: flex; gap: 12px; padding: 3px 0; border-bottom: 1px solid #edf0f5; }
+  .model-box .field:last-child { border-bottom: none; }
+  .model-box .field-name { color: var(--text); min-width: 160px; }
+  .model-box .field-type { color: var(--green); min-width: 90px; }
+  .model-box .field-note { color: var(--muted); font-size: 12px; }
+
+  /* ── AI flow ── */
+  .ai-flow {
+    display: flex; flex-direction: column; gap: 0;
+    position: relative; padding-left: 24px; margin: 16px 0;
+  }
+  .ai-flow::before {
+    content: '';
+    position: absolute; left: 9px; top: 0; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .ai-step {
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 10px 0;
+    position: relative;
+  }
+  .ai-step::before {
+    content: '';
+    position: absolute; left: -19px; top: 16px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--blue);
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 2px var(--blue-lt);
+  }
+  .ai-step.ai::before { background: var(--orange); box-shadow: 0 0 0 2px var(--orange-lt); }
+  .ai-step.device::before { background: var(--green); box-shadow: 0 0 0 2px var(--green-lt); }
+  .ai-step-label { font-size: 11px; color: var(--muted); min-width: 60px; padding-top: 2px; }
+  .ai-step-content { font-size: 14px; flex: 1; }
+  .ai-step-content strong { color: var(--text); }
+
+  /* ── Permission list ── */
+  .perm-list { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .perm-list li {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .perm-list li::before { content: '🔑'; font-size: 14px; }
+
+  /* ── Checklist ── */
+  .checklist { list-style: none; }
+  .checklist li {
+    padding: 6px 0;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li::before { content: '☐'; color: var(--blue); font-size: 16px; }
+  .checklist li.done::before { content: '✓'; color: var(--green); }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center; color: var(--muted);
+    font-size: 13px; padding-top: 32px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; }
+    .page { padding: 16px; }
+    .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ══════════════════════════════════════════════════════ COVER -->
+<div class="cover">
+  <div class="app-name">青鸟</div>
+  <div class="app-en">QINGNIAO · BLUEBIRD</div>
+  <div class="tagline">家庭一家之主的 AI 原生管家 — 护航财务安全，释放工作自由</div>
+  <div class="meta">
+    <span>文档版本 v0.1</span>
+    <span>2026-05-17</span>
+    <span>Android App 端设计</span>
+    <span>作者 Mike</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ TOC -->
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">产品定位与目标用户</a></li>
+    <li><a href="#s2">功能模块总览</a></li>
+    <li><a href="#s3">App 技术架构</a></li>
+    <li><a href="#s4">F1 — 银行卡绑定监控</a></li>
+    <li><a href="#s5">F2 — AI 每周菜单</a></li>
+    <li><a href="#s6">F3 — 语音记账</a></li>
+    <li><a href="#s7">F4 — 家庭管理</a></li>
+    <li><a href="#s8">AI 集成设计</a></li>
+    <li><a href="#s9">API 对接总表</a></li>
+    <li><a href="#s10">数据模型</a></li>
+    <li><a href="#s11">权限与安全</a></li>
+    <li><a href="#s12">MVP 交付范围</a></li>
+  </ol>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ S1 产品定位 -->
+<div class="section" id="s1">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <div>
+      <div class="section-title">产品定位与目标用户</div>
+      <div class="section-sub">Who we build for, and why</div>
+    </div>
+  </div>
+
+  <p>青鸟是专为<strong>家庭一家之主</strong>设计的 AI 原生家庭管家。AI 是核心交互层，每一个功能模块都有主动智能，而非被动查询工具。</p>
+
+  <div class="cards">
+    <div class="card blue">
+      <div class="card-icon">👤</div>
+      <div class="card-title">目标用户</div>
+      <div class="card-desc">25–45 岁，需要同时照料父母和子女，对家庭财务和健康有强烈责任感，工作繁忙，希望用最少时间管好家庭事务。</div>
+    </div>
+    <div class="card green">
+      <div class="card-icon">🎯</div>
+      <div class="card-title">核心目标</div>
+      <div class="card-desc"><strong>财务安全</strong>：掌控父母资产状况，防止资产流失。<br><strong>工作自由</strong>：家庭日常事务自动化，减少心智负担。</div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">🤖</div>
+      <div class="card-title">AI-native 原则</div>
+      <div class="card-desc">AI 主动推送洞察，不等用户发问。每个功能模块都有 AI 分析层，语言为中文，语气亲切简洁。</div>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">👨‍👩‍👧‍👦</div>
+      <div class="card-title">家庭结构</div>
+      <div class="card-desc">支持父系大家庭 + 母系大家庭 + 小家庭（夫妻+子女）+ 亲属家庭（子节点）四层层级。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ S2 功能总览 -->
+<div class="section" id="s2">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <div>
+      <div class="section-title">功能模块总览</div>
+      <div class="section-sub">Four pillars of the Bluebird app</div>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card blue">
+      <div class="card-icon">🏦</div>
+      <div class="card-title">F1 银行卡监控 <span class="tag mvp">MVP</span></div>
+      <div class="card-desc">查询父母手机号绑定的银行卡，AI 自动识别休眠卡和异常风险，每日推送报告。</div>
+    </div>
+    <div class="card green">
+      <div class="card-icon">🥦</div>
+      <div class="card-title">F2 AI 菜单 <span class="tag later">Phase 2</span></div>
+      <div class="card-desc">根据家庭成员年龄、健康偏好、预算，每周自动生成菜单，一键导出购物清单。</div>
+    </div>
+    <div class="card orange">
+      <div class="card-icon">🎙️</div>
+      <div class="card-title">F3 语音记账 <span class="tag later">Phase 2</span></div>
+      <div class="card-desc">说一句话完成记账，AI 自动分类，月末主动生成家庭财务洞察报告。</div>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">🌳</div>
+      <div class="card-title">F4 家庭管理 <span class="tag mvp">MVP</span></div>
+      <div class="card-desc">维护家庭成员信息，设置层级与权限，是其他功能的数据基础。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ S3 技术架构 -->
+<div class="section" id="s3">
+  <div class="section-header">
+    <div class="section-num">3</div>
+    <div>
+      <div class="section-title">App 技术架构</div>
+      <div class="section-sub">Kotlin 2 · Jetpack Compose · Material3</div>
+    </div>
+  </div>
+
+  <div class="arch-box">
+<span class="c-muted">┌─────────────────────────────────────────────────────────────────┐</span>
+<span class="c-muted">│</span>                      <span class="c-white">青鸟 Android App</span>                            <span class="c-muted">│</span>
+<span class="c-muted">│</span>                                                                 <span class="c-muted">│</span>
+<span class="c-muted">│  ┌──────────────────────────────────────────────────────────┐  │</span>
+<span class="c-muted">│  │</span>  <span class="c-orange">UI 层 (Jetpack Compose · Material3 · Navigation Compose)</span>   <span class="c-muted">│  │</span>
+<span class="c-muted">│  │</span>  HomeScreen · FamilyScreen · MonitorScreen · MenuScreen   <span class="c-muted">│  │</span>
+<span class="c-muted">│  │</span>  LedgerScreen · VoiceInputSheet · AiChatSheet             <span class="c-muted">│  │</span>
+<span class="c-muted">│  └──────────────────────────────────────────────────────────┘  │</span>
+<span class="c-muted">│               ↕  StateFlow / ViewModel                          │</span>
+<span class="c-muted">│  ┌──────────────────────────────────────────────────────────┐  │</span>
+<span class="c-muted">│  │</span>  <span class="c-blue">ViewModel 层 (MVVM · Hilt DI · Kotlin Coroutines)</span>          <span class="c-muted">│  │</span>
+<span class="c-muted">│  │</span>  FamilyVM · MonitorVM · MenuVM · LedgerVM · VoiceVM       <span class="c-muted">│  │</span>
+<span class="c-muted">│  └──────────────────────────────────────────────────────────┘  │</span>
+<span class="c-muted">│               ↕  suspend fun / Flow                             │</span>
+<span class="c-muted">│  ┌─────────────────────────┐  ┌───────────────────────────┐  │</span>
+<span class="c-muted">│  │</span>  <span class="c-green">Repository 层</span>            <span class="c-muted">│  │</span>  <span class="c-green">本地存储</span>                   <span class="c-muted">│  │</span>
+<span class="c-muted">│  │</span>  FamilyRepo              <span class="c-muted">│  │</span>  DataStore (设置/令牌)     <span class="c-muted">│  │</span>
+<span class="c-muted">│  │</span>  MonitorRepo             <span class="c-muted">│  │</span>  Room DB (离线账单草稿)   <span class="c-muted">│  │</span>
+<span class="c-muted">│  │</span>  MenuRepo                <span class="c-muted">│  │</span>                           <span class="c-muted">│  │</span>
+<span class="c-muted">│  │</span>  LedgerRepo              <span class="c-muted">│  └───────────────────────────┘  │</span>
+<span class="c-muted">│  └─────────────────────────┘                                    │</span>
+<span class="c-muted">│               ↕  Retrofit2 + OkHttp                             │</span>
+<span class="c-muted">│  ┌──────────────────────────────────────────────────────────┐  │</span>
+<span class="c-muted">│  │</span>  <span class="c-orange">Network 层</span>                                                 <span class="c-muted">│  │</span>
+<span class="c-muted">│  │</span>  ApiService (Retrofit) · AuthInterceptor (JWT Bearer)     <span class="c-muted">│  │</span>
+<span class="c-muted">│  │</span>  SseClient (OkHttp EventSource) · FCM Push Handler        <span class="c-muted">│  │</span>
+<span class="c-muted">│  └──────────────────────────────────────────────────────────┘  │</span>
+<span class="c-muted">│               ↕  HTTP / SSE                                     │</span>
+<span class="c-muted">│               🌐  easyfamily-backend (Spring Boot 3.4)           │</span>
+<span class="c-muted">└─────────────────────────────────────────────────────────────────┘</span>
+  </div>
+
+  <h3>技术栈明细</h3>
+  <div class="stack-item"><span class="stack-icon">🏗️</span><div><div class="stack-name">Kotlin 2 + Coroutines + Flow</div><div class="stack-desc">全异步，StateFlow 驱动 UI 状态，IO dispatcher 处理网络与数据库</div></div></div>
+  <div class="stack-item"><span class="stack-icon">🎨</span><div><div class="stack-name">Jetpack Compose + Material3</div><div class="stack-desc">声明式 UI，DynamicColorScheme 主题，Navigation Compose 管理路由</div></div></div>
+  <div class="stack-item"><span class="stack-icon">💉</span><div><div class="stack-name">Hilt (Dagger)</div><div class="stack-desc">依赖注入，ViewModel、Repository、ApiService 均由 Hilt 管理</div></div></div>
+  <div class="stack-item"><span class="stack-icon">🌐</span><div><div class="stack-name">Retrofit2 + OkHttp4</div><div class="stack-desc">REST API 调用；OkHttp EventSource 处理 AI 流式输出（SSE）；JWT 自动续期拦截器</div></div></div>
+  <div class="stack-item"><span class="stack-icon">🗄️</span><div><div class="stack-name">Room + DataStore</div><div class="stack-desc">Room 存离线记账草稿；DataStore 存 JWT token、用户偏好、菜单缓存</div></div></div>
+  <div class="stack-item"><span class="stack-icon">🎙️</span><div><div class="stack-name">Android SpeechRecognizer</div><div class="stack-desc">系统级语音识别，零额外依赖，支持普通话；阿里云 NLS SDK 作为升级选项</div></div></div>
+  <div class="stack-item"><span class="stack-icon">🔔</span><div><div class="stack-name">Firebase FCM</div><div class="stack-desc">接收后端推送的银行卡风险告警、菜单生成通知等主动消息</div></div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ S4 F1 银行卡监控 -->
+<div class="section" id="s4">
+  <div class="section-header">
+    <div class="section-num">4</div>
+    <div>
+      <div class="section-title">F1 — 银行卡绑定监控</div>
+      <div class="section-sub">Phone → Bank Card binding monitor with AI risk analysis</div>
+    </div>
+  </div>
+
+  <div class="feature-block">
+    <div class="feature-header">
+      <div class="feature-icon fi-blue">🏦</div>
+      <div>
+        <div class="feature-title">银行卡绑定监控 <span class="tag mvp">MVP · 已后端实现</span></div>
+        <div class="feature-id">module: monitor · api: /api/v1/monitor/*</div>
+      </div>
+    </div>
+    <div class="feature-body">
+      <p>每日凌晨 2 点，后端自动扫描所有家庭成员手机号绑定的银行卡，与上次快照对比，调用通义千问生成中文风险摘要，HIGH 风险立即推送。App 端展示最新快照列表，支持手动触发扫描。</p>
+
+      <h4>页面流程</h4>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="screen-box">
+            <div class="screen-bar"></div>
+            <div class="screen-title">首页 Home</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line short"></div>
+              <div class="line"></div><div class="line short"></div>
+            </div>
+            <div class="btn-mock"></div>
+          </div>
+          <div class="screen-label">首页入口卡片<br>显示风险概况</div>
+        </div>
+        <div class="flow-arrow tap"></div>
+        <div class="flow-step">
+          <div class="screen-box">
+            <div class="screen-bar"></div>
+            <div class="screen-title">监控总览</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line"></div>
+              <div class="line short"></div><div class="line"></div>
+            </div>
+            <div class="btn-mock"></div>
+          </div>
+          <div class="screen-label">成员列表<br>风险 badge</div>
+        </div>
+        <div class="flow-arrow tap"></div>
+        <div class="flow-step">
+          <div class="screen-box ai-glow">
+            <div class="screen-bar"></div>
+            <div class="screen-title">AI 风险报告</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line"></div>
+              <div class="line short"></div><div class="line"></div>
+              <div class="line short"></div>
+            </div>
+            <div class="btn-mock"></div>
+          </div>
+          <div class="screen-label">单成员详情<br>AI 摘要 + 历史</div>
+        </div>
+        <div class="flow-arrow tap"></div>
+        <div class="flow-step">
+          <div class="screen-box">
+            <div class="screen-bar"></div>
+            <div class="screen-title">扫描进行中</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line short"></div>
+            </div>
+          </div>
+          <div class="screen-label">手动触发<br>POST /scan → 202</div>
+        </div>
+      </div>
+
+      <h4>关键 UI 元素</h4>
+      <table class="api-table">
+        <tr><th>元素</th><th>说明</th><th>风险着色</th></tr>
+        <tr><td>风险 Badge</td><td>成员卡片右上角，标注 LOW/MEDIUM/HIGH</td><td>绿/橙/红</td></tr>
+        <tr><td>AI 摘要卡</td><td>展示通义千问生成的中文分析文本（≤100字）</td><td>按风险级别</td></tr>
+        <tr><td>快照时间</td><td>"上次检测：2小时前"，超过24h 显示警告</td><td>—</td></tr>
+        <tr><td>手动刷新按钮</td><td>POST /scan，返回 202 后显示进度指示器，完成后刷新列表</td><td>—</td></tr>
+        <tr><td>推送通知</td><td>FCM 通知点击直接跳转到对应成员的风险报告页</td><td>HIGH=红色通知</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ S5 F2 菜单 -->
+<div class="section" id="s5">
+  <div class="section-header">
+    <div class="section-num">5</div>
+    <div>
+      <div class="section-title">F2 — AI 每周菜单</div>
+      <div class="section-sub">Personalized weekly meal plan with shopping list</div>
+    </div>
+  </div>
+
+  <div class="feature-block">
+    <div class="feature-header">
+      <div class="feature-icon fi-green">🥦</div>
+      <div>
+        <div class="feature-title">AI 每周菜单 <span class="tag later">Phase 2</span></div>
+        <div class="feature-id">module: menu · api: /api/v1/menu/*</div>
+      </div>
+    </div>
+    <div class="feature-body">
+      <p>后端每周日 21:00 自动根据家庭成员档案（年龄、饮食禁忌、预算）调用 AI 生成七日菜单。App 端展示可浏览的菜单日历和一键生成的购物清单。</p>
+
+      <h4>页面流程</h4>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="screen-box green-glow">
+            <div class="screen-bar"></div>
+            <div class="screen-title">菜单首页</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line short"></div>
+              <div class="line"></div>
+            </div>
+            <div class="btn-mock" style="background:var(--green)"></div>
+          </div>
+          <div class="screen-label">本周菜单<br>7 天纵览</div>
+        </div>
+        <div class="flow-arrow tap"></div>
+        <div class="flow-step">
+          <div class="screen-box green-glow">
+            <div class="screen-bar"></div>
+            <div class="screen-title">周一详情</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line"></div>
+              <div class="line short"></div><div class="line"></div>
+            </div>
+          </div>
+          <div class="screen-label">早/午/晚三餐<br>营养说明</div>
+        </div>
+        <div class="flow-arrow tap"></div>
+        <div class="flow-step">
+          <div class="screen-box green-glow">
+            <div class="screen-bar"></div>
+            <div class="screen-title">购物清单</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line short"></div>
+              <div class="line"></div><div class="line short"></div>
+            </div>
+            <div class="btn-mock" style="background:var(--green)"></div>
+          </div>
+          <div class="screen-label">按食材归类<br>可打勾</div>
+        </div>
+        <div class="flow-arrow tap"></div>
+        <div class="flow-step">
+          <div class="screen-box ai-glow">
+            <div class="screen-bar"></div>
+            <div class="screen-title">AI 重新生成</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line short"></div>
+            </div>
+          </div>
+          <div class="screen-label">调整预算/口味<br>重新生成</div>
+        </div>
+      </div>
+
+      <h4>家庭成员档案（输入菜单 AI）</h4>
+      <table class="api-table">
+        <tr><th>字段</th><th>示例</th><th>影响菜单方式</th></tr>
+        <tr><td>年龄</td><td>爷爷 72 岁</td><td>控盐、软食、低糖</td></tr>
+        <tr><td>dietary_tags</td><td>["无麸质", "低盐"]</td><td>过滤不合适食材</td></tr>
+        <tr><td>health_notes</td><td>"糖尿病，不能吃精米"</td><td>AI 系统提示词注入</td></tr>
+        <tr><td>本周预算</td><td>¥800</td><td>AI 控制食材档次</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ S6 F3 语音记账 -->
+<div class="section" id="s6">
+  <div class="section-header">
+    <div class="section-num">6</div>
+    <div>
+      <div class="section-title">F3 — 语音记账</div>
+      <div class="section-sub">Voice-first household bookkeeping with AI insight</div>
+    </div>
+  </div>
+
+  <div class="feature-block">
+    <div class="feature-header">
+      <div class="feature-icon fi-orange">🎙️</div>
+      <div>
+        <div class="feature-title">语音记账 <span class="tag later">Phase 2</span></div>
+        <div class="feature-id">module: ledger · api: /api/v1/ledger/*</div>
+      </div>
+    </div>
+    <div class="feature-body">
+      <p>用户说一句话，Android SpeechRecognizer 转文字，后端调用 AI 解析意图，自动分类入账。月末 AI 主动生成家庭财务洞察报告。</p>
+
+      <h4>语音入账全链路</h4>
+      <div class="ai-flow">
+        <div class="ai-step device">
+          <div class="ai-step-label">用户</div>
+          <div class="ai-step-content"><strong>长按麦克风按钮</strong>，说"今天买菜花了58块"</div>
+        </div>
+        <div class="ai-step device">
+          <div class="ai-step-label">设备</div>
+          <div class="ai-step-content"><strong>Android SpeechRecognizer</strong> 转文字（≤1s，离线可用）</div>
+        </div>
+        <div class="ai-step">
+          <div class="ai-step-label">App</div>
+          <div class="ai-step-content">展示识别文字供用户确认，<strong>POST /api/v1/ledger/voice-parse</strong></div>
+        </div>
+        <div class="ai-step ai">
+          <div class="ai-step-label">AI</div>
+          <div class="ai-step-content">通义千问解析意图 → <code>{"amount":58, "category":"餐饮", "note":"买菜", "date":"today"}</code></div>
+        </div>
+        <div class="ai-step">
+          <div class="ai-step-label">App</div>
+          <div class="ai-step-content">展示<strong>确认卡片</strong>（金额/分类/备注可编辑），用户确认后 POST /entries 写入</div>
+        </div>
+        <div class="ai-step device">
+          <div class="ai-step-label">用户</div>
+          <div class="ai-step-content">记账完成，返回账单列表，<strong>全程 &lt;5秒</strong></div>
+        </div>
+      </div>
+
+      <h4>页面流程</h4>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="screen-box orange-glow" style="border-color:var(--orange);background:var(--orange-lt)">
+            <div class="screen-bar"></div>
+            <div class="screen-title">记账首页</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line short"></div>
+              <div class="line"></div>
+            </div>
+            <div class="btn-mock" style="background:var(--orange)"></div>
+          </div>
+          <div class="screen-label">账单列表<br>月度汇总</div>
+        </div>
+        <div class="flow-arrow tap"></div>
+        <div class="flow-step">
+          <div class="screen-box orange-glow" style="border-color:var(--orange);background:var(--orange-lt)">
+            <div class="screen-bar"></div>
+            <div class="screen-title">🎙️ 录音</div>
+            <div class="screen-lines">
+              <div class="line short"></div>
+            </div>
+          </div>
+          <div class="screen-label">Bottom Sheet<br>按住录音</div>
+        </div>
+        <div class="flow-arrow tap"></div>
+        <div class="flow-step">
+          <div class="screen-box ai-glow">
+            <div class="screen-bar"></div>
+            <div class="screen-title">AI 解析确认</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line short"></div>
+              <div class="line"></div>
+            </div>
+            <div class="btn-mock"></div>
+          </div>
+          <div class="screen-label">展示解析结果<br>可编辑修正</div>
+        </div>
+        <div class="flow-arrow tap"></div>
+        <div class="flow-step">
+          <div class="screen-box orange-glow" style="border-color:var(--orange);background:var(--orange-lt)">
+            <div class="screen-bar"></div>
+            <div class="screen-title">记账完成 ✓</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line short"></div>
+            </div>
+          </div>
+          <div class="screen-label">写入成功<br>Snackbar 确认</div>
+        </div>
+        <div class="flow-arrow tap"></div>
+        <div class="flow-step">
+          <div class="screen-box ai-glow">
+            <div class="screen-bar"></div>
+            <div class="screen-title">月度洞察</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line"></div>
+              <div class="line short"></div>
+            </div>
+          </div>
+          <div class="screen-label">AI 月报<br>主动推送</div>
+        </div>
+      </div>
+
+      <h4>记账分类</h4>
+      <div class="two-col">
+        <div>
+          <span class="tag mvp">餐饮</span> <span class="tag mvp">交通</span> <span class="tag mvp">医疗</span><br>
+          <span class="tag mvp">教育</span> <span class="tag mvp">购物</span> <span class="tag mvp">娱乐</span>
+        </div>
+        <div>
+          <span class="tag ai">储蓄/投资</span> <span class="tag ai">水电物业</span><br>
+          <span class="tag later">其他</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ S7 F4 家庭管理 -->
+<div class="section" id="s7">
+  <div class="section-header">
+    <div class="section-num">7</div>
+    <div>
+      <div class="section-title">F4 — 家庭管理</div>
+      <div class="section-sub">Hierarchical family structure with role-based access</div>
+    </div>
+  </div>
+
+  <div class="feature-block">
+    <div class="feature-header">
+      <div class="feature-icon fi-purple">🌳</div>
+      <div>
+        <div class="feature-title">家庭管理 <span class="tag mvp">MVP</span></div>
+        <div class="feature-id">module: family · api: /api/v1/family/*</div>
+      </div>
+    </div>
+    <div class="feature-body">
+      <p>家庭成员信息是所有功能的数据基础。支持四层家庭层级，亲属家庭为大家庭的子节点。</p>
+
+      <h4>家庭层级结构</h4>
+      <div class="arch-box" style="font-size:13px">
+<span class="c-white">超级视图（一家之主视角）</span>
+├── <span class="c-blue">大家庭A</span>（父系）  <span class="c-muted">extended_family</span>
+│   ├── <span class="c-green">小家庭</span>（自己 + 伴侣 + 子女）  <span class="c-muted">nuclear_family · PATRIARCH</span>
+│   ├── <span class="c-orange">亲属家庭1</span>（叔叔家）  <span class="c-muted">nuclear_family · RELATIVE</span>
+│   └── <span class="c-orange">亲属家庭2</span>（姑姑家）  <span class="c-muted">nuclear_family · RELATIVE</span>
+└── <span class="c-blue">大家庭B</span>（母系）  <span class="c-muted">extended_family</span>
+    ├── <span class="c-green">外公外婆</span>（独居老人）  <span class="c-muted">CARETAKER 权限</span>
+    └── <span class="c-orange">亲属家庭3</span>（舅舅家）  <span class="c-muted">nuclear_family · RELATIVE</span>
+      </div>
+
+      <h4>角色权限</h4>
+      <table class="api-table">
+        <tr><th>角色</th><th>数据可见范围</th><th>典型人物</th></tr>
+        <tr><td><span class="tag mvp">PATRIARCH</span></td><td>两个大家庭全部数据</td><td>一家之主（当前用户）</td></tr>
+        <tr><td><span class="tag ai">FAMILY_ADMIN</span></td><td>本小家庭全部</td><td>配偶</td></tr>
+        <tr><td><span class="tag later">MEMBER</span></td><td>本人 + 被授权成员</td><td>成年子女</td></tr>
+        <tr><td><span class="tag later">CARETAKER</span></td><td>仅指定被看护人</td><td>保姆、护工</td></tr>
+      </table>
+
+      <h4>页面流程</h4>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="screen-box purple-glow">
+            <div class="screen-bar"></div>
+            <div class="screen-title">家庭树</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line short"></div>
+              <div class="line"></div><div class="line short"></div>
+            </div>
+          </div>
+          <div class="screen-label">层级树状图<br>折叠/展开</div>
+        </div>
+        <div class="flow-arrow tap"></div>
+        <div class="flow-step">
+          <div class="screen-box purple-glow">
+            <div class="screen-bar"></div>
+            <div class="screen-title">成员详情</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line"></div>
+              <div class="line short"></div>
+            </div>
+            <div class="btn-mock" style="background:var(--purple)"></div>
+          </div>
+          <div class="screen-label">姓名/手机/<br>关系/健康标签</div>
+        </div>
+        <div class="flow-arrow tap"></div>
+        <div class="flow-step">
+          <div class="screen-box purple-glow">
+            <div class="screen-bar"></div>
+            <div class="screen-title">添加成员</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line short"></div>
+              <div class="line"></div>
+            </div>
+            <div class="btn-mock" style="background:var(--purple)"></div>
+          </div>
+          <div class="screen-label">Bottom Sheet<br>表单录入</div>
+        </div>
+        <div class="flow-arrow tap"></div>
+        <div class="flow-step">
+          <div class="screen-box purple-glow">
+            <div class="screen-bar"></div>
+            <div class="screen-title">权限设置</div>
+            <div class="screen-lines">
+              <div class="line"></div><div class="line short"></div>
+            </div>
+          </div>
+          <div class="screen-label">角色分配<br>共享授权</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ S8 AI 集成 -->
+<div class="section" id="s8">
+  <div class="section-header">
+    <div class="section-num">8</div>
+    <div>
+      <div class="section-title">AI 集成设计</div>
+      <div class="section-sub">How the app interfaces with the AI layer</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h3>AI 能力矩阵</h3>
+      <table class="api-table">
+        <tr><th>场景</th><th>AI 类型</th><th>模型</th></tr>
+        <tr><td>银行卡风险分析</td><td>文本生成</td><td>qwen-turbo</td></tr>
+        <tr><td>每周菜单生成</td><td>结构化生成</td><td>qwen-max</td></tr>
+        <tr><td>语音记账意图解析</td><td>分类/提取</td><td>qwen-turbo</td></tr>
+        <tr><td>月度财务洞察</td><td>分析报告</td><td>qwen-max</td></tr>
+        <tr><td>降级备用</td><td>全部</td><td>claude-haiku</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>App 端 AI 交互模式</h3>
+      <table class="api-table">
+        <tr><th>模式</th><th>场景</th><th>实现</th></tr>
+        <tr><td>同步请求</td><td>语音意图解析</td><td>Retrofit suspend fun</td></tr>
+        <tr><td>SSE 流式</td><td>AI 对话（未来）</td><td>OkHttp EventSource</td></tr>
+        <tr><td>推送被动</td><td>风险告警</td><td>FCM notification</td></tr>
+        <tr><td>轮询</td><td>菜单生成状态</td><td>GET /menu/status?taskId=</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>AI 上下文（后端组装，App 透明感知）</h3>
+  <p>每次 AI 请求，后端自动注入家庭画像快照（成员列表、近30条流水摘要、健康标签），App 端无需手动传递上下文。</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ S9 API 总表 -->
+<div class="section" id="s9">
+  <div class="section-header">
+    <div class="section-num">9</div>
+    <div>
+      <div class="section-title">API 对接总表</div>
+      <div class="section-sub">All endpoints consumed by the Android app</div>
+    </div>
+  </div>
+
+  <h3>认证</h3>
+  <table class="api-table">
+    <tr><th>Method</th><th>Path</th><th>说明</th><th>Auth</th></tr>
+    <tr><td><span class="method post">POST</span></td><td><code>/api/v1/auth/captcha</code></td><td>获取图形验证码 token</td><td>无</td></tr>
+    <tr><td><span class="method post">POST</span></td><td><code>/api/v1/auth/sms/send</code></td><td>发送 SMS 验证码</td><td>无</td></tr>
+    <tr><td><span class="method post">POST</span></td><td><code>/api/v1/auth/login</code></td><td>手机号 + 验证码登录，返回 JWT</td><td>无</td></tr>
+    <tr><td><span class="method post">POST</span></td><td><code>/api/v1/auth/refresh</code></td><td>刷新 access token</td><td>Refresh JWT</td></tr>
+    <tr><td><span class="method post">POST</span></td><td><code>/api/v1/auth/logout</code></td><td>登出，token 加黑名单</td><td>Bearer</td></tr>
+  </table>
+
+  <h3>家庭管理</h3>
+  <table class="api-table">
+    <tr><th>Method</th><th>Path</th><th>说明</th><th>Auth</th></tr>
+    <tr><td><span class="method get">GET</span></td><td><code>/api/v1/family/members</code></td><td>获取当前用户的家庭成员列表</td><td>Bearer</td></tr>
+    <tr><td><span class="method post">POST</span></td><td><code>/api/v1/family/members</code></td><td>新增家庭成员</td><td>Bearer</td></tr>
+    <tr><td><span class="method post">POST</span></td><td><code>/api/v1/family/members/{id}</code></td><td>更新成员信息（含健康标签）</td><td>Bearer</td></tr>
+    <tr><td><span class="method delete">DELETE</span></td><td><code>/api/v1/family/members/{id}</code></td><td>删除成员</td><td>Bearer</td></tr>
+  </table>
+
+  <h3>银行卡监控</h3>
+  <table class="api-table">
+    <tr><th>Method</th><th>Path</th><th>说明</th><th>Auth</th></tr>
+    <tr><td><span class="method get">GET</span></td><td><code>/api/v1/monitor/snapshots</code></td><td>获取每个成员最新快照列表（含 AI 风险摘要）</td><td>Bearer</td></tr>
+    <tr><td><span class="method post">POST</span></td><td><code>/api/v1/monitor/scan</code></td><td>触发立即扫描，返回 202 Accepted</td><td>Bearer</td></tr>
+  </table>
+
+  <h3>每周菜单</h3>
+  <table class="api-table">
+    <tr><th>Method</th><th>Path</th><th>说明</th><th>Auth</th></tr>
+    <tr><td><span class="method get">GET</span></td><td><code>/api/v1/menu/weekly/current</code></td><td>获取当周菜单（含每天三餐）</td><td>Bearer</td></tr>
+    <tr><td><span class="method post">POST</span></td><td><code>/api/v1/menu/weekly/generate</code></td><td>手动触发生成（异步，返回 taskId）</td><td>Bearer</td></tr>
+    <tr><td><span class="method get">GET</span></td><td><code>/api/v1/menu/shopping-list</code></td><td>获取本周购物清单</td><td>Bearer</td></tr>
+  </table>
+
+  <h3>语音记账</h3>
+  <table class="api-table">
+    <tr><th>Method</th><th>Path</th><th>说明</th><th>Auth</th></tr>
+    <tr><td><span class="method post">POST</span></td><td><code>/api/v1/ledger/voice-parse</code></td><td>文本意图解析，返回结构化记账信息</td><td>Bearer</td></tr>
+    <tr><td><span class="method post">POST</span></td><td><code>/api/v1/ledger/entries</code></td><td>写入一条账单记录</td><td>Bearer</td></tr>
+    <tr><td><span class="method get">GET</span></td><td><code>/api/v1/ledger/entries</code></td><td>账单列表（支持 date/category/member 过滤）</td><td>Bearer</td></tr>
+    <tr><td><span class="method get">GET</span></td><td><code>/api/v1/ledger/summary</code></td><td>月度汇总（含 AI 洞察文本）</td><td>Bearer</td></tr>
+  </table>
+
+  <h3>通知设备注册</h3>
+  <table class="api-table">
+    <tr><th>Method</th><th>Path</th><th>说明</th><th>Auth</th></tr>
+    <tr><td><span class="method post">POST</span></td><td><code>/api/v1/notify/register</code></td><td>注册/更新 FCM device token</td><td>Bearer</td></tr>
+  </table>
+
+  <p style="margin-top:12px; font-size:13px; color:var(--muted)">所有请求统一返回 <code>ApiResponse&lt;T&gt;</code> 包装：<code>{"code":"OK","message":"success","data":{...}}</code></p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ S10 数据模型 -->
+<div class="section" id="s10">
+  <div class="section-header">
+    <div class="section-num">10</div>
+    <div>
+      <div class="section-title">客户端数据模型</div>
+      <div class="section-sub">Key Kotlin data classes and Room entities</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h3>FamilyMember</h3>
+      <div class="model-box">
+        <div class="entity-name">data class FamilyMember</div>
+        <div class="field"><span class="field-name">memberId</span><span class="field-type">String</span><span class="field-note">FM + UUID</span></div>
+        <div class="field"><span class="field-name">name</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-name">phone</span><span class="field-type">String?</span><span class="field-note">脱敏显示</span></div>
+        <div class="field"><span class="field-name">relation</span><span class="field-type">String</span><span class="field-note">爸爸/妈妈/…</span></div>
+        <div class="field"><span class="field-name">familyRole</span><span class="field-type">FamilyRole</span></div>
+        <div class="field"><span class="field-name">dietaryTags</span><span class="field-type">List&lt;String&gt;</span></div>
+        <div class="field"><span class="field-name">healthNotes</span><span class="field-type">String?</span></div>
+        <div class="field"><span class="field-name">birthYear</span><span class="field-type">Int?</span></div>
+      </div>
+    </div>
+    <div>
+      <h3>MonitorSnapshot</h3>
+      <div class="model-box">
+        <div class="entity-name">data class MonitorSnapshot</div>
+        <div class="field"><span class="field-name">memberId</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-name">memberName</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-name">memberPhone</span><span class="field-type">String</span><span class="field-note">138****8888</span></div>
+        <div class="field"><span class="field-name">riskLevel</span><span class="field-type">RiskLevel</span><span class="field-note">LOW/MEDIUM/HIGH</span></div>
+        <div class="field"><span class="field-name">riskSummary</span><span class="field-type">String?</span><span class="field-note">AI 中文摘要</span></div>
+        <div class="field"><span class="field-name">cardCount</span><span class="field-type">Int</span></div>
+        <div class="field"><span class="field-name">checkedAt</span><span class="field-type">Instant</span></div>
+      </div>
+    </div>
+    <div>
+      <h3>LedgerEntry（Room）</h3>
+      <div class="model-box">
+        <div class="entity-name">@Entity data class LedgerEntry</div>
+        <div class="field"><span class="field-name">id</span><span class="field-type">Long</span><span class="field-note">服务端 ID</span></div>
+        <div class="field"><span class="field-name">amount</span><span class="field-type">BigDecimal</span></div>
+        <div class="field"><span class="field-name">category</span><span class="field-note">餐饮/交通/…</span></div>
+        <div class="field"><span class="field-name">note</span><span class="field-type">String?</span></div>
+        <div class="field"><span class="field-name">entryDate</span><span class="field-type">LocalDate</span></div>
+        <div class="field"><span class="field-name">source</span><span class="field-note">VOICE/MANUAL</span></div>
+        <div class="field"><span class="field-name">rawText</span><span class="field-type">String?</span><span class="field-note">原始语音文本</span></div>
+        <div class="field"><span class="field-name">syncStatus</span><span class="field-note">PENDING/SYNCED</span></div>
+      </div>
+    </div>
+    <div>
+      <h3>WeeklyMenu</h3>
+      <div class="model-box">
+        <div class="entity-name">data class WeeklyMenu</div>
+        <div class="field"><span class="field-name">weekStart</span><span class="field-type">LocalDate</span></div>
+        <div class="field"><span class="field-name">days</span><span class="field-type">List&lt;DayMenu&gt;</span></div>
+        <div class="field"><span class="field-name">shoppingList</span><span class="field-type">List&lt;ShoppingItem&gt;</span></div>
+        <div class="field"><span class="field-name">budgetCny</span><span class="field-type">BigDecimal?</span></div>
+        <div class="field"><span class="field-name">status</span><span class="field-note">DRAFT/CONFIRMED</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ S11 权限安全 -->
+<div class="section" id="s11">
+  <div class="section-header">
+    <div class="section-num">11</div>
+    <div>
+      <div class="section-title">权限与安全</div>
+      <div class="section-sub">Android permissions & data privacy</div>
+    </div>
+  </div>
+
+  <h3>所需 Android 权限</h3>
+  <ul class="perm-list">
+    <li>RECORD_AUDIO — 语音记账录音</li>
+    <li>INTERNET — API 网络访问</li>
+    <li>POST_NOTIFICATIONS — FCM 推送通知</li>
+    <li>RECEIVE_BOOT_COMPLETED — 开机自动刷新 token</li>
+  </ul>
+
+  <h3 style="margin-top:24px">数据隐私约束</h3>
+  <table class="api-table">
+    <tr><th>数据</th><th>App 端处理</th></tr>
+    <tr><td>JWT Token</td><td>存 DataStore（加密），不存 SharedPreferences 明文</td></tr>
+    <tr><td>手机号</td><td>展示时始终脱敏（138****8888），不做本地明文缓存</td></tr>
+    <tr><td>银行卡信息</td><td>不在本地持久化，仅展示服务端返回的快照</td></tr>
+    <tr><td>语音录音</td><td>转文字后立即丢弃，不上传音频文件</td></tr>
+    <tr><td>家庭成员数据</td><td>内存缓存，App 退出清空；Room 仅存账单草稿</td></tr>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ S12 MVP 范围 -->
+<div class="section" id="s12">
+  <div class="section-header">
+    <div class="section-num">12</div>
+    <div>
+      <div class="section-title">MVP 交付范围</div>
+      <div class="section-sub">What ships first, what comes later</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h3>MVP（当前迭代）</h3>
+      <ul class="checklist">
+        <li class="done">后端银行卡监控模块（已完成）</li>
+        <li class="done">通义千问 + Claude 双 LLM 路由（已完成）</li>
+        <li>登录页（SMS OTP）</li>
+        <li>家庭成员管理页（增删改查）</li>
+        <li>银行卡监控列表页</li>
+        <li>AI 风险报告详情页</li>
+        <li>手动触发扫描</li>
+        <li>FCM 推送接收 + 跳转</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Phase 2</h3>
+      <ul class="checklist">
+        <li>每周菜单展示 + 购物清单</li>
+        <li>语音记账（SpeechRecognizer）</li>
+        <li>账单列表 + 月度 AI 洞察</li>
+        <li>家庭层级树状图</li>
+        <li>成员健康档案编辑</li>
+        <li>AI 菜单手动重新生成</li>
+        <li>离线账单草稿（Room 暂存）</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 24px">Backend 已完成 / App 待实现</h3>
+  <table class="api-table">
+    <tr><th>API</th><th>后端</th><th>Android</th></tr>
+    <tr><td>GET /monitor/snapshots</td><td><span class="tag mvp">✓ 已实现</span></td><td><span class="tag later">待实现</span></td></tr>
+    <tr><td>POST /monitor/scan</td><td><span class="tag mvp">✓ 已实现</span></td><td><span class="tag later">待实现</span></td></tr>
+    <tr><td>GET /family/members</td><td><span class="tag mvp">✓ 已实现</span></td><td><span class="tag later">待实现</span></td></tr>
+    <tr><td>POST /auth/login</td><td><span class="tag mvp">✓ 已实现</span></td><td><span class="tag later">待实现</span></td></tr>
+    <tr><td>GET /menu/weekly/current</td><td><span class="tag later">Phase 2</span></td><td><span class="tag later">Phase 2</span></td></tr>
+    <tr><td>POST /ledger/voice-parse</td><td><span class="tag later">Phase 2</span></td><td><span class="tag later">Phase 2</span></td></tr>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ FOOTER -->
+<div class="footer">
+  <p>青鸟 · Bluebird — Android App 系统设计 v0.1 · 2026-05-17</p>
+  <p style="margin-top:4px">本文档随开发迭代更新，以代码实现为准</p>
+</div>
+
+</div><!-- .page -->
+</body>
+</html>
