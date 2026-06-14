@@ -13,18 +13,15 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.easyfamily.data.ApiClient
-import com.easyfamily.data.FamilyMemberItem
-import com.easyfamily.data.PhoneItem
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.easyfamily.data.network.FamilyMemberItem
+import com.easyfamily.data.network.PhoneItem
 import com.easyfamily.ui.theme.AppPalette
 
 private data class FamilyMember(
@@ -34,21 +31,12 @@ private data class FamilyMember(
 )
 
 @Composable
-fun FamilyScreen(accessToken: String) {
-    var members by remember { mutableStateOf(emptyList<FamilyMember>()) }
-    var info by remember { mutableStateOf("加载中...") }
+fun FamilyScreen(
+    viewModel: FamilyViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(accessToken) {
-        try {
-            val myPhones = ApiClient.listMyPhones(accessToken)
-            val familyMembers = ApiClient.listFamilyMembers(accessToken)
-            members = buildFamilyMembers(myPhones, familyMembers)
-            info = if (members.isEmpty()) "暂无家庭成员" else "已同步家庭成员"
-        } catch (e: Exception) {
-            members = emptyList()
-            info = "加载失败：${e.message ?: "unknown"}"
-        }
-    }
+    val members = buildFamilyMembers(uiState.myPhones, uiState.familyMembers)
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
@@ -73,7 +61,7 @@ fun FamilyScreen(accessToken: String) {
                 FamilyMemberCard(member = member)
             }
         }
-        Text(info, style = MaterialTheme.typography.bodySmall, color = AppPalette.TextSecondary)
+        Text(uiState.info, style = MaterialTheme.typography.bodySmall, color = AppPalette.TextSecondary)
     }
 }
 
@@ -81,7 +69,7 @@ fun FamilyScreen(accessToken: String) {
 private fun FamilyMemberCard(member: FamilyMember) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = AppPalette.CloudSurface),
+        colors = CardDefaults.cardColors(containerColor = AppPalette.Surface),
         shape = RoundedCornerShape(14.dp)
     ) {
         Row(
@@ -106,10 +94,10 @@ private fun FamilyMemberCard(member: FamilyMember) {
             Text(
                 text = member.relation,
                 style = MaterialTheme.typography.labelLarge,
-                color = if (member.relation == "户主") AppPalette.DeepPink else AppPalette.TextPrimary,
+                color = if (member.relation == "户主") AppPalette.Coral else AppPalette.TextPrimary,
                 modifier = Modifier
                     .background(
-                        color = if (member.relation == "户主") AppPalette.SoftPink else AppPalette.CloudWhite,
+                        color = if (member.relation == "户主") AppPalette.SoftCoral else AppPalette.Background,
                         shape = RoundedCornerShape(999.dp)
                     )
                     .padding(horizontal = 10.dp, vertical = 5.dp)

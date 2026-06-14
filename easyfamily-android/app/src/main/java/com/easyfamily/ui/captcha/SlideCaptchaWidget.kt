@@ -38,16 +38,18 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.easyfamily.data.ApiClient
-import com.easyfamily.data.SlideTrackPoint
+import com.easyfamily.data.repository.CaptchaRepository
 import com.easyfamily.ui.theme.AppPalette
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
+data class SlideTrackPoint(val x: Int, val y: Int, val t: Int)
+
 @Composable
 fun SlideCaptchaWidget(
     onVerified: (captchaToken: String) -> Unit,
+    captchaRepository: CaptchaRepository,
     modifier: Modifier = Modifier
 ) {
     var challengeId by remember { mutableStateOf("") }
@@ -76,16 +78,17 @@ fun SlideCaptchaWidget(
         currentOffsetPx = 0f
         tracks.clear()
         scope.launch {
-            try {
-                val result = ApiClient.initSlideCaptcha()
-                challengeId = result.challengeId
-                targetX = parseTargetXFromDataUrl(result.backgroundImageUrl)
-                status = "ready"
-                info = "向右拖动滑块完成验证"
-            } catch (e: Exception) {
-                status = "error"
-                info = "加载失败：${e.message ?: "unknown"}"
-            }
+            captchaRepository.initSlideCaptcha()
+                .onSuccess { result ->
+                    challengeId = result.challengeId
+                    targetX = parseTargetXFromDataUrl(result.backgroundImageUrl)
+                    status = "ready"
+                    info = "向右拖动滑块完成验证"
+                }
+                .onFailure { e ->
+                    status = "error"
+                    info = "加载失败：${e.message ?: "unknown"}"
+                }
         }
     }
 
@@ -152,8 +155,7 @@ fun SlideCaptchaWidget(
                                 currentOffsetPx =
                                     (currentOffsetPx + dragAmount.x).coerceIn(0f, maxDrag)
                                 val svgX = currentSvgX().toInt()
-                                val t =
-                                    (System.currentTimeMillis() - dragStartTime).toInt()
+                                val t = (System.currentTimeMillis() - dragStartTime).toInt()
                                 if (tracks.isEmpty() || t > tracks.last().t) {
                                     tracks.add(SlideTrackPoint(svgX, 0, t))
                                 }
@@ -170,22 +172,26 @@ fun SlideCaptchaWidget(
                                 status = "verifying"
                                 info = "验证中..."
                                 scope.launch {
-                                    try {
-                                        val token = ApiClient.verifySlideCaptcha(
-                                            challengeId = challengeId,
-                                            offsetX = finalSvgX,
-                                            totalTimeMs = totalTimeMs,
-                                            tracks = tracks.toList()
-                                        )
-                                        status = "success"
-                                        info = "验证通过"
-                                        onVerified(token)
-                                    } catch (e: Exception) {
-                                        status = "error"
-                                        info = "验证失败，请重试"
-                                        delay(1500)
-                                        loadChallenge()
+                                    val trackMaps = tracks.map { p ->
+                                        mapOf("x" to p.x, "y" to p.y, "t" to p.t)
                                     }
+                                    captchaRepository.verifySlideCaptcha(
+                                        challengeId = challengeId,
+                                        offsetX = finalSvgX,
+                                        totalTimeMs = totalTimeMs,
+                                        tracks = trackMaps
+                                    )
+                                        .onSuccess { token ->
+                                            status = "success"
+                                            info = "验证通过"
+                                            onVerified(token)
+                                        }
+                                        .onFailure {
+                                            status = "error"
+                                            info = "验证失败，请重试"
+                                            delay(1500)
+                                            loadChallenge()
+                                        }
                                 }
                             }
                         },
@@ -208,7 +214,7 @@ fun SlideCaptchaWidget(
                             "success" -> Color(0xFF4CAF50)
                             "error" -> Color(0xFFE53935)
                             "verifying" -> Color(0xFF9E9E9E)
-                            else -> AppPalette.PrimaryPink
+                            else -> AppPalette.Coral
                         },
                         shape = CircleShape
                     ),
@@ -239,20 +245,20 @@ fun SlideCaptchaWidget(
 
         if (status == "error") {
             TextButton(onClick = { loadChallenge() }) {
-                Text("重新加载", color = AppPalette.PrimaryPink)
+                Text("重新加载", color = AppPalette.Coral)
             }
         }
     }
 }
 
 private fun parseTargetXFromDataUrl(dataUrl: String): Int {
-    try {
+    return try {
         val base64Part = dataUrl.substringAfter("base64,")
         val svgBytes = Base64.decode(base64Part, Base64.DEFAULT)
         val svg = String(svgBytes, Charsets.UTF_8)
         val match = Regex("cx='(\\d+)'").find(svg)
-        return match?.groupValues?.get(1)?.toIntOrNull() ?: 160
+        match?.groupValues?.get(1)?.toIntOrNull() ?: 160
     } catch (_: Exception) {
-        return 160
+        160
     }
 }

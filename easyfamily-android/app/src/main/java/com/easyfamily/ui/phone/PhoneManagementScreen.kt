@@ -21,49 +21,29 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.easyfamily.data.ApiClient
-import com.easyfamily.data.PhoneItem
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.easyfamily.ui.theme.AppPalette
-import kotlinx.coroutines.launch
 
 @Composable
-fun PhoneManagementScreen(accessToken: String) {
+fun PhoneManagementScreen(
+    viewModel: PhoneViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     var phone by remember { mutableStateOf("") }
     var smsCode by remember { mutableStateOf("") }
-    var phones by remember { mutableStateOf(emptyList<PhoneItem>()) }
-    var info by remember { mutableStateOf("加载中...") }
-    var loading by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
+
     val keyboardController = LocalSoftwareKeyboardController.current
     val phoneFocusRequester = remember { FocusRequester() }
-
-    fun refreshPhones() {
-        scope.launch {
-            loading = true
-            try {
-                phones = ApiClient.listMyPhones(accessToken)
-                info = "号码列表已刷新"
-            } catch (e: Exception) {
-                info = "刷新失败：${e.message ?: "unknown"}"
-            } finally {
-                loading = false
-            }
-        }
-    }
-
-    LaunchedEffect(accessToken) {
-        refreshPhones()
-    }
 
     LaunchedEffect(Unit) {
         phoneFocusRequester.requestFocus()
@@ -73,7 +53,7 @@ fun PhoneManagementScreen(accessToken: String) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = AppPalette.CloudSurface)
+        colors = CardDefaults.elevatedCardColors(containerColor = AppPalette.Surface)
     ) {
         Column(
             modifier = Modifier
@@ -115,73 +95,53 @@ fun PhoneManagementScreen(accessToken: String) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = {
-                        scope.launch {
-                            try {
-                                ApiClient.bindPhone(accessToken, phone, smsCode)
-                                info = "绑定成功"
-                                refreshPhones()
-                            } catch (e: Exception) {
-                                info = "绑定失败：${e.message ?: "unknown"}"
-                            }
-                        }
+                        viewModel.bindPhone(phone, smsCode)
                     },
-                    enabled = phone.length == 11 && smsCode.isNotBlank() && !loading,
-                    modifier = Modifier.weight(1f).height(46.dp),
+                    enabled = phone.length == 11 && smsCode.isNotBlank() && !uiState.loading,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(46.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = AppPalette.PrimaryPink,
-                        contentColor = AppPalette.CloudSurface
+                        containerColor = AppPalette.Coral,
+                        contentColor = AppPalette.Surface
                     )
                 ) { Text("绑定") }
 
                 Button(
                     onClick = {
-                        scope.launch {
-                            try {
-                                ApiClient.unbindPhone(accessToken, phone)
-                                info = "解绑成功"
-                                refreshPhones()
-                            } catch (e: Exception) {
-                                info = "解绑失败：${e.message ?: "unknown"}"
-                            }
-                        }
+                        viewModel.unbindPhone(phone)
                     },
-                    enabled = phone.length == 11 && !loading,
-                    modifier = Modifier.weight(1f).height(46.dp),
+                    enabled = phone.length == 11 && !uiState.loading,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(46.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = AppPalette.DeepPink,
-                        contentColor = AppPalette.CloudSurface
+                        containerColor = AppPalette.CoralDark,
+                        contentColor = AppPalette.Surface
                     )
                 ) { Text("解绑") }
             }
 
             TextButton(
                 onClick = {
-                    scope.launch {
-                        try {
-                            ApiClient.setPrimaryPhone(accessToken, phone)
-                            info = "已切换主号"
-                            refreshPhones()
-                        } catch (e: Exception) {
-                            info = "切换主号失败：${e.message ?: "unknown"}"
-                        }
-                    }
+                    viewModel.setPrimaryPhone(phone)
                 },
-                enabled = phone.length == 11 && !loading
+                enabled = phone.length == 11 && !uiState.loading
             ) {
                 Text("设为主号")
             }
 
             Text("当前号码列表：", style = MaterialTheme.typography.bodyMedium)
-            phones.forEach { item ->
+            uiState.phones.forEach { item ->
                 Text(
                     text = "${item.phone}  ${if (item.isPrimary) "[主号]" else ""}  ${item.status}",
                     style = MaterialTheme.typography.bodySmall,
                     color = AppPalette.TextPrimary
                 )
             }
-            Text(info, style = MaterialTheme.typography.bodySmall, color = AppPalette.TextSecondary)
+            Text(uiState.info, style = MaterialTheme.typography.bodySmall, color = AppPalette.TextSecondary)
         }
     }
 }

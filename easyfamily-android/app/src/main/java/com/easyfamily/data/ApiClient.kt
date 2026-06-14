@@ -154,6 +154,261 @@ object ApiClient {
         }
     }
 
+    // --- Bill APIs ---
+
+    suspend fun createBill(
+        token: String,
+        category: String,
+        amount: Double,
+        note: String?,
+        billedAt: String
+    ): BillItemDto = withContext(Dispatchers.IO) {
+        val payload = JSONObject()
+            .put("category", category)
+            .put("amount", amount)
+            .put("billedAt", billedAt)
+        if (note != null) payload.put("note", note)
+        val json = request("POST", "/api/v1/bill", token, payload)
+        parseBillItem(json.getJSONObject("data"))
+    }
+
+    suspend fun listBills(token: String, month: String? = null): List<BillItemDto> = withContext(Dispatchers.IO) {
+        val path = if (month != null) "/api/v1/bill?month=$month" else "/api/v1/bill"
+        val json = request("GET", path, accessToken = token)
+        val data = json.optJSONArray("data") ?: JSONArray()
+        buildList {
+            for (i in 0 until data.length()) add(parseBillItem(data.getJSONObject(i)))
+        }
+    }
+
+    suspend fun updateBill(
+        token: String,
+        id: Long,
+        category: String,
+        amount: Double,
+        note: String?,
+        billedAt: String
+    ): BillItemDto = withContext(Dispatchers.IO) {
+        val payload = JSONObject()
+            .put("category", category)
+            .put("amount", amount)
+            .put("billedAt", billedAt)
+        if (note != null) payload.put("note", note)
+        val json = request("PUT", "/api/v1/bill/$id", token, payload)
+        parseBillItem(json.getJSONObject("data"))
+    }
+
+    suspend fun deleteBill(token: String, id: Long) = withContext(Dispatchers.IO) {
+        request("DELETE", "/api/v1/bill/$id", accessToken = token)
+    }
+
+    suspend fun getBillStats(token: String, month: String? = null): BillStatsDto = withContext(Dispatchers.IO) {
+        val path = if (month != null) "/api/v1/bill/stats?month=$month" else "/api/v1/bill/stats"
+        val json = request("GET", path, accessToken = token)
+        val data = json.getJSONObject("data")
+        val catsArr = data.optJSONArray("byCategory") ?: JSONArray()
+        val byCategory = buildList {
+            for (i in 0 until catsArr.length()) {
+                val c = catsArr.getJSONObject(i)
+                add(BillCategoryStatDto(c.getString("category"), c.getDouble("amount"), c.getInt("count")))
+            }
+        }
+        BillStatsDto(data.getDouble("totalAmount"), data.getInt("count"), byCategory)
+    }
+
+    private fun parseBillItem(obj: JSONObject) = BillItemDto(
+        id = obj.getLong("id"),
+        category = obj.getString("category"),
+        amount = obj.getDouble("amount"),
+        note = obj.optString("note").takeIf { it.isNotEmpty() },
+        billedAt = obj.getString("billedAt"),
+        createdAt = obj.getLong("createdAt")
+    )
+
+    // --- Vehicle APIs ---
+
+    suspend fun listVehicles(accessToken: String): List<VehicleItemDto> = withContext(Dispatchers.IO) {
+        val json = request("GET", "/api/v1/vehicles", accessToken = accessToken)
+        val data = json.optJSONArray("data") ?: JSONArray()
+        buildList {
+            for (index in 0 until data.length()) {
+                val item = data.getJSONObject(index)
+                add(
+                    VehicleItemDto(
+                        id = item.getLong("id"),
+                        plateNumber = item.getString("plateNumber"),
+                        brand = item.getString("brand"),
+                        model = item.getString("model"),
+                        year = item.optInt("year", 0).takeIf { it > 0 }
+                    )
+                )
+            }
+        }
+    }
+
+    suspend fun createVehicle(
+        accessToken: String,
+        plateNumber: String,
+        brand: String,
+        model: String,
+        year: Int?
+    ): VehicleItemDto = withContext(Dispatchers.IO) {
+        val payload = JSONObject()
+            .put("plateNumber", plateNumber)
+            .put("brand", brand)
+            .put("model", model)
+        if (year != null) payload.put("year", year)
+        val json = request("POST", "/api/v1/vehicles", accessToken, payload)
+        val data = json.getJSONObject("data")
+        VehicleItemDto(
+            id = data.getLong("id"),
+            plateNumber = data.getString("plateNumber"),
+            brand = data.getString("brand"),
+            model = data.getString("model"),
+            year = data.optInt("year", 0).takeIf { it > 0 }
+        )
+    }
+
+    suspend fun updateVehicle(
+        accessToken: String,
+        vehicleId: Long,
+        plateNumber: String,
+        brand: String,
+        model: String,
+        year: Int?
+    ): VehicleItemDto = withContext(Dispatchers.IO) {
+        val payload = JSONObject()
+            .put("plateNumber", plateNumber)
+            .put("brand", brand)
+            .put("model", model)
+        if (year != null) payload.put("year", year)
+        val json = request("PUT", "/api/v1/vehicles/$vehicleId", accessToken, payload)
+        val data = json.getJSONObject("data")
+        VehicleItemDto(
+            id = data.getLong("id"),
+            plateNumber = data.getString("plateNumber"),
+            brand = data.getString("brand"),
+            model = data.getString("model"),
+            year = data.optInt("year", 0).takeIf { it > 0 }
+        )
+    }
+
+    suspend fun deleteVehicle(accessToken: String, vehicleId: Long) = withContext(Dispatchers.IO) {
+        request("DELETE", "/api/v1/vehicles/$vehicleId", accessToken = accessToken)
+    }
+
+    suspend fun listRecords(accessToken: String, vehicleId: Long): List<MaintenanceRecordDto> = withContext(Dispatchers.IO) {
+        val json = request("GET", "/api/v1/vehicles/$vehicleId/records", accessToken = accessToken)
+        val data = json.optJSONArray("data") ?: JSONArray()
+        buildList {
+            for (index in 0 until data.length()) {
+                val item = data.getJSONObject(index)
+                val itemsArr = item.optJSONArray("items") ?: JSONArray()
+                val items = buildList {
+                    for (j in 0 until itemsArr.length()) {
+                        val i = itemsArr.getJSONObject(j)
+                        add(
+                            MaintenanceItemDto(
+                                id = i.getLong("id"),
+                                category = i.getString("category"),
+                                itemName = i.getString("itemName"),
+                                cost = i.getDouble("cost").toBigDecimal(),
+                                isDiy = i.optBoolean("isDiy", false),
+                                notes = i.optString("notes", "").takeIf { it.isNotEmpty() }
+                            )
+                        )
+                    }
+                }
+                add(
+                    MaintenanceRecordDto(
+                        id = item.getLong("id"),
+                        vehicleId = item.getLong("vehicleId"),
+                        serviceDate = item.getString("serviceDate"),
+                        mileageKm = item.optInt("mileageKm", 0).takeIf { it > 0 },
+                        shopName = item.optString("shopName", "").takeIf { it.isNotEmpty() },
+                        totalCost = item.getDouble("totalCost").toBigDecimal(),
+                        notes = item.optString("notes", "").takeIf { it.isNotEmpty() },
+                        items = items
+                    )
+                )
+            }
+        }
+    }
+
+    suspend fun createRecord(
+        accessToken: String,
+        vehicleId: Long,
+        serviceDate: String,
+        mileageKm: Int?,
+        shopName: String?,
+        notes: String?,
+        itemsJson: JSONArray
+    ): MaintenanceRecordDto = withContext(Dispatchers.IO) {
+        val payload = JSONObject()
+            .put("serviceDate", serviceDate)
+        if (mileageKm != null) payload.put("mileageKm", mileageKm)
+        if (shopName != null) payload.put("shopName", shopName)
+        if (notes != null) payload.put("notes", notes)
+        payload.put("items", itemsJson)
+        val json = request("POST", "/api/v1/vehicles/$vehicleId/records", accessToken, payload)
+        val data = json.getJSONObject("data")
+        val itemsArr = data.optJSONArray("items") ?: JSONArray()
+        val items = buildList {
+            for (j in 0 until itemsArr.length()) {
+                val i = itemsArr.getJSONObject(j)
+                add(
+                    MaintenanceItemDto(
+                        id = i.getLong("id"),
+                        category = i.getString("category"),
+                        itemName = i.getString("itemName"),
+                        cost = i.getDouble("cost").toBigDecimal(),
+                        isDiy = i.optBoolean("isDiy", false),
+                        notes = i.optString("notes", "").takeIf { it.isNotEmpty() }
+                    )
+                )
+            }
+        }
+        MaintenanceRecordDto(
+            id = data.getLong("id"),
+            vehicleId = data.getLong("vehicleId"),
+            serviceDate = data.getString("serviceDate"),
+            mileageKm = data.optInt("mileageKm", 0).takeIf { it > 0 },
+            shopName = data.optString("shopName", "").takeIf { it.isNotEmpty() },
+            totalCost = data.getDouble("totalCost").toBigDecimal(),
+            notes = data.optString("notes", "").takeIf { it.isNotEmpty() },
+            items = items
+        )
+    }
+
+    suspend fun deleteRecord(accessToken: String, vehicleId: Long, recordId: Long) = withContext(Dispatchers.IO) {
+        request("DELETE", "/api/v1/vehicles/$vehicleId/records/$recordId", accessToken = accessToken)
+    }
+
+    suspend fun getVehicleStats(accessToken: String, vehicleId: Long): VehicleStatsDto = withContext(Dispatchers.IO) {
+        val json = request("GET", "/api/v1/vehicles/$vehicleId/stats", accessToken = accessToken)
+        val data = json.getJSONObject("data")
+        val catsArr = data.optJSONArray("byCategory") ?: JSONArray()
+        val categories = buildList {
+            for (j in 0 until catsArr.length()) {
+                val c = catsArr.getJSONObject(j)
+                add(
+                    CategoryStatDto(
+                        category = c.getString("category"),
+                        totalCost = c.getDouble("totalCost").toBigDecimal(),
+                        itemCount = c.getLong("itemCount"),
+                        diyCount = c.getLong("diyCount")
+                    )
+                )
+            }
+        }
+        VehicleStatsDto(
+            totalCost = data.getDouble("totalCost").toBigDecimal(),
+            totalRecords = data.getLong("totalRecords"),
+            totalItems = data.getLong("totalItems"),
+            byCategory = categories
+        )
+    }
+
     private fun request(
         method: String,
         path: String,
@@ -247,4 +502,67 @@ data class FamilyMemberItem(
     val name: String,
     val phone: String,
     val relation: String
+)
+
+data class BillItemDto(
+    val id: Long,
+    val category: String,
+    val amount: Double,
+    val note: String?,
+    val billedAt: String,
+    val createdAt: Long
+)
+
+data class BillCategoryStatDto(
+    val category: String,
+    val amount: Double,
+    val count: Int
+)
+
+data class BillStatsDto(
+    val totalAmount: Double,
+    val count: Int,
+    val byCategory: List<BillCategoryStatDto>
+)
+
+data class VehicleItemDto(
+    val id: Long,
+    val plateNumber: String,
+    val brand: String,
+    val model: String,
+    val year: Int?
+)
+
+data class MaintenanceItemDto(
+    val id: Long,
+    val category: String,
+    val itemName: String,
+    val cost: java.math.BigDecimal,
+    val isDiy: Boolean,
+    val notes: String?
+)
+
+data class MaintenanceRecordDto(
+    val id: Long,
+    val vehicleId: Long,
+    val serviceDate: String,
+    val mileageKm: Int?,
+    val shopName: String?,
+    val totalCost: java.math.BigDecimal,
+    val notes: String?,
+    val items: List<MaintenanceItemDto>
+)
+
+data class CategoryStatDto(
+    val category: String,
+    val totalCost: java.math.BigDecimal,
+    val itemCount: Long,
+    val diyCount: Long
+)
+
+data class VehicleStatsDto(
+    val totalCost: java.math.BigDecimal,
+    val totalRecords: Long,
+    val totalItems: Long,
+    val byCategory: List<CategoryStatDto>
 )
