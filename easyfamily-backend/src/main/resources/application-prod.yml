@@ -1,0 +1,9 @@
+spring:
+  flyway:
+    # In addition to the default classpath:db/migration location, load the
+    # MySQL-only migrations (e.g. InnoDB tablespace encryption via
+    # `ALTER TABLE ... ENCRYPTION='Y'`) which H2 cannot execute and which
+    # must therefore stay out of the default migration path used by tests.
+    locations:
+      - classpath:db/migration
+      - classpath:db/migration-mysql

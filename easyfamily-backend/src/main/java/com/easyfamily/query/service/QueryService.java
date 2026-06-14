@@ -83,6 +83,26 @@ public class QueryService {
         }
     }
 
+    /**
+     * Queries the provider directly for monitoring purposes.
+     * Bypasses quota enforcement and does not record the query.
+     * Returns the raw JSON string from the provider, or a minimal JSON on error.
+     */
+    public String queryForMonitor(String phone) {
+        try {
+            String providerKey = settingsService.current().providerKey();
+            var provider = providerRouter.resolve(providerKey);
+            var result = providerExecutor.executeWithGuards(
+                    providerKey,
+                    () -> provider.verifyRealName(phone, "", null)
+            );
+            return "{\"phone\":\"" + phone + "\",\"verified\":" + result.verified()
+                    + ",\"provider\":\"" + result.providerName() + "\"}";
+        } catch (Exception e) {
+            return "{\"phone\":\"" + phone + "\",\"error\":\"" + e.getMessage() + "\"}";
+        }
+    }
+
     private String maskIdCard(String idCardNo) {
         if (idCardNo == null || idCardNo.length() < 8) {
             return "****";

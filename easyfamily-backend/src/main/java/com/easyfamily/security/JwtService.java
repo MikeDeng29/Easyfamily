@@ -42,6 +42,18 @@ public class JwtService {
                 .compact();
     }
 
+    public String issueAdminAccessToken(String userId, String username) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .subject(userId)
+                .id(UUID.randomUUID().toString())
+                .claims(Map.of("phone", username, "tokenType", "access", "roles", "ROLE_ADMIN"))
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusSeconds(accessTokenMinutes * 60L)))
+                .signWith(secretKey)
+                .compact();
+    }
+
     public String issueRefreshToken(String userId, String phone) {
         Instant now = Instant.now();
         return Jwts.builder()

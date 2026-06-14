@@ -16,6 +16,8 @@ public final class ClientErrorMapper {
             entry("CAPTCHA_CHALLENGE_EXPIRED", new ErrorView("AUTH_FAILED", "滑动验证码已过期，请重新获取")),
             entry("CAPTCHA_SLIDE_VERIFY_FAILED", new ErrorView("AUTH_FAILED", "滑动验证失败，请重试")),
             entry("CAPTCHA_RISK_DETECTED", new ErrorView("AUTH_FAILED", "验证行为异常，请重试")),
+            entry("SMS_SEND_FAILED", new ErrorView("SERVICE_UNAVAILABLE", "短信发送失败，请稍后重试")),
+            entry("SMS_SEND_ERROR", new ErrorView("SERVICE_UNAVAILABLE", "短信服务暂不可用，请稍后重试")),
             entry("INVALID_SMS_CODE", new ErrorView("AUTH_FAILED", "短信验证码错误或已过期")),
             entry("INVALID_ADMIN_CREDENTIALS", new ErrorView("AUTH_FAILED", "账号或密码错误")),
             entry("TOKEN_REVOKED", new ErrorView("AUTH_FAILED", "登录状态已失效，请重新登录")),
@@ -34,7 +36,11 @@ public final class ClientErrorMapper {
             entry("PROVIDER_UNAVAILABLE", new ErrorView("SERVICE_UNAVAILABLE", "查询服务暂不可用，请稍后再试")),
             entry("ALIYUN_MARKET_HTTP_ERROR", new ErrorView("SERVICE_UNAVAILABLE", "第三方查询服务异常，请稍后重试")),
             entry("ALIYUN_MARKET_CALL_ERROR", new ErrorView("SERVICE_UNAVAILABLE", "第三方查询服务调用失败，请稍后重试")),
-            entry("ALIYUN_MARKET_CONFIG_MISSING", new ErrorView("SERVICE_UNAVAILABLE", "查询服务配置不完整，请联系管理员"))
+            entry("ALIYUN_MARKET_CONFIG_MISSING", new ErrorView("SERVICE_UNAVAILABLE", "查询服务配置不完整，请联系管理员")),
+            entry("BILL_NOT_FOUND", new ErrorView("BIZ_ERROR", "账单不存在或无权操作")),
+            entry("BILL_INVALID_DATE", new ErrorView("INVALID_PARAM", "日期格式错误，请使用 yyyy-MM-dd")),
+            entry("BILL_INVALID_MONTH", new ErrorView("INVALID_PARAM", "月份格式错误，请使用 yyyy-MM")),
+            entry("MEMORY_NOT_FOUND", new ErrorView("BIZ_ERROR", "记忆不存在或无权操作"))
     );
 
     private ClientErrorMapper() {

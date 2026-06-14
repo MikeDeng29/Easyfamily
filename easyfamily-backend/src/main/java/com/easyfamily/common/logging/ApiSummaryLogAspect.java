@@ -33,8 +33,11 @@ public class ApiSummaryLogAspect {
     private static final int MAX_LOG_VALUE_LENGTH = 300;
     private static final int MAX_LOG_TEXT_LENGTH = 1500;
     private static final Set<String> SENSITIVE_KEYS = Set.of(
-            "password", "pwd", "token", "smscode", "authorization", "secret", "appcode"
+            "password", "pwd", "token", "smscode", "authorization", "secret", "appcode",
+            "amount", "note"
     );
+    private static final Set<String> PHONE_KEY_TOKENS = Set.of("phone");
+    private static final java.util.regex.Pattern PHONE_PATTERN = java.util.regex.Pattern.compile("^1\\d{10}$");
 
     private final ObjectMapper objectMapper;
 
@@ -177,6 +180,8 @@ public class ApiSummaryLogAspect {
                 String key = String.valueOf(entry.getKey());
                 if (isSensitiveKey(key)) {
                     result.put(key, "***");
+                } else if (isPhoneKey(key)) {
+                    result.put(key, maskPhoneValue(entry.getValue()));
                 } else {
                     result.put(key, sanitize(entry.getValue()));
                 }
@@ -207,6 +212,49 @@ public class ApiSummaryLogAspect {
             }
         }
         return false;
+    }
+
+    private boolean isPhoneKey(String key) {
+        String lower = key.toLowerCase(Locale.ROOT);
+        for (String token : PHONE_KEY_TOKENS) {
+            if (lower.contains(token)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Partially masks a phone-like value for logging, e.g. "13800138000" -> "138****8000".
+     * Falls back to sanitized recursive handling for non-scalar values, and to full masking
+     * ("***") for short strings that don't look like a phone number.
+     */
+    private Object maskPhoneValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof CharSequence || value instanceof Number) {
+            return maskPhone(String.valueOf(value));
+        }
+        // Non-scalar (nested object/collection) under a "phone"-named key: sanitize recursively.
+        return sanitize(value);
+    }
+
+    private String maskPhone(String text) {
+        if (text == null) {
+            return null;
+        }
+        if (PHONE_PATTERN.matcher(text).matches()) {
+            return text.substring(0, 3) + "****" + text.substring(text.length() - 4);
+        }
+        int length = text.length();
+        if (length <= 7) {
+            // Too short to safely partially mask without revealing most of the value.
+            return "***";
+        }
+        int prefixLen = 3;
+        int suffixLen = 4;
+        return text.substring(0, prefixLen) + "****" + text.substring(length - suffixLen);
     }
 
     private String truncate(String text) {

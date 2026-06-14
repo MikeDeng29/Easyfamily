@@ -24,6 +24,7 @@ import java.util.Base64;
 import java.util.List;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class AuthService {
@@ -36,27 +37,35 @@ public class AuthService {
     private static final int SLIDE_MIN_TRACK_POINTS = 4;
     private static final int SLIDE_MAX_BACKTRACK_PX = 8;
     private static final int SMS_CODE_TTL_SECONDS = 300;
+    private static final String TEST_PHONE = "13800000000";
     private final JwtService jwtService;
     private final TokenBlacklistService tokenBlacklistService;
     private final LoginAuditLogService loginAuditLogService;
     private final JdbcTemplate jdbcTemplate;
+    private final SmsSender smsSender;
     private final String adminUsername;
     private final String adminPassword;
+
+    private final String mockSmsCode;
 
     public AuthService(
             JwtService jwtService,
             TokenBlacklistService tokenBlacklistService,
             LoginAuditLogService loginAuditLogService,
             JdbcTemplate jdbcTemplate,
+            SmsSender smsSender,
             @Value("${easyfamily.security.admin-username:admin}") String adminUsername,
-            @Value("${easyfamily.security.admin-password:Trump@666}") String adminPassword
+            @Value("${easyfamily.security.admin-password:change-me-in-vault}") String adminPassword,
+            @Value("${easyfamily.sms.mock-code:}") String mockSmsCode
     ) {
         this.jwtService = jwtService;
         this.tokenBlacklistService = tokenBlacklistService;
         this.loginAuditLogService = loginAuditLogService;
         this.jdbcTemplate = jdbcTemplate;
+        this.smsSender = smsSender;
         this.adminUsername = adminUsername;
         this.adminPassword = adminPassword;
+        this.mockSmsCode = mockSmsCode;
     }
 
     public String verifyCaptcha(CaptchaVerifyRequest request) {
@@ -172,7 +181,14 @@ public class AuthService {
         if (captchaValid == null || captchaValid <= 0) {
             throw new BusinessException("INVALID_CAPTCHA_TOKEN", "captcha token invalid or expired");
         }
-        // TODO: Integrate SMS provider (Aliyun/Tencent Cloud) in Sprint 2.
+        String code = (mockSmsCode != null && !mockSmsCode.isBlank())
+                ? mockSmsCode
+                : String.format("%06d", ThreadLocalRandom.current().nextInt(1_000_000));
+        // App "一键登录（测试）" uses this fixed phone number, which isn't a real,
+        // deliverable mobile number — skip the provider call so it doesn't fail.
+        if (!TEST_PHONE.equals(request.phone())) {
+            smsSender.send(request.phone(), code);
+        }
         jdbcTemplate.update(
                 """
                         INSERT INTO auth_sms_codes(phone, sms_code, expire_at, created_at)
@@ -182,7 +198,7 @@ public class AuthService {
                           expire_at = VALUES(expire_at)
                         """,
                 request.phone(),
-                "123456",
+                code,
                 Timestamp.from(Instant.now().plusSeconds(SMS_CODE_TTL_SECONDS))
         );
     }
@@ -211,7 +227,7 @@ public class AuthService {
                 throw new BusinessException("INVALID_ADMIN_CREDENTIALS", "invalid admin username or password");
             }
             String userId = "ADMIN_" + request.username();
-            String accessToken = jwtService.issueAccessToken(userId, request.username());
+            String accessToken = jwtService.issueAdminAccessToken(userId, request.username());
             String refreshToken = jwtService.issueRefreshToken(userId, request.username());
             loginAuditLogService.record("ADMIN_PASSWORD", request.username(), "SUCCESS", null, clientIp, userAgent);
             return new LoginResponse(userId, accessToken, refreshToken);

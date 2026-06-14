@@ -43,6 +43,31 @@ easyfamily:
       base-url: "https://example.aliyun-market.com"
       path: "/phone/binding/query"
       app-code: ${ALIYUN_MARKET_APP_CODE:replace-with-real-appcode}
+  sms:
+    provider: ${SMS_PROVIDER:aliyun}
+    mock-code: ${SMS_MOCK_CODE:123456}
+    aliyun:
+      access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID:}
+      access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET:}
+      sign-name: ${ALIYUN_SMS_SIGN_NAME:}
+      template-code: ${ALIYUN_SMS_TEMPLATE_CODE:}
+      region-id: cn-hangzhou
   report:
     read-from-metric-table: true
     backfill-from-memory-on-empty: true
+  ai:
+    provider: ${AI_PROVIDER:deepseek}
+    deepseek:
+      api-key: ${DEEPSEEK_API_KEY:}
+      model: ${DEEPSEEK_MODEL:deepseek-chat}
+      timeout-ms: 15000
+    qwen:
+      api-key: ${QWEN_API_KEY:}
+      model: ${QWEN_MODEL:qwen-turbo}
+      timeout-ms: 10000
+    claude:
+      api-key: ${CLAUDE_API_KEY:}
+      timeout-ms: 15000
+  monitor:
+    enabled: ${MONITOR_ENABLED:true}
+    scan-cron: "0 0 2 * * ?"
