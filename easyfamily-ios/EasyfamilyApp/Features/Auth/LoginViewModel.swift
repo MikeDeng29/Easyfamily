@@ -4,12 +4,21 @@ import Combine
 @MainActor
 final class LoginViewModel: ObservableObject {
     @Published var phone: String = "" {
-        didSet { phone = String(phone.filter(\.isNumber).prefix(11)) }
+        didSet {
+            let filtered = String(phone.filter(\.isNumber).prefix(11))
+            if filtered != phone { phone = filtered }
+        }
     }
     @Published var smsCode: String = "" {
-        didSet { smsCode = String(smsCode.filter(\.isNumber).prefix(6)) }
+        didSet {
+            let filtered = String(smsCode.filter(\.isNumber).prefix(6))
+            if filtered != smsCode { smsCode = filtered }
+        }
     }
     @Published var captchaToken: String = ""
+    /// Set when the backend flags this request as risky and requires a slide captcha
+    /// before it will send another SMS code.
+    @Published var captchaRequired: Bool = false
     @Published var smsCooldownSeconds: Int = 0
     @Published var loading: Bool = false
     @Published var info: String = ""
@@ -19,7 +28,9 @@ final class LoginViewModel: ObservableObject {
     var isPhoneValid: Bool { phone.count == 11 }
     var isSmsCodeValid: Bool { smsCode.count == 6 }
     var isCaptchaVerified: Bool { !captchaToken.isEmpty }
-    var canSendSms: Bool { isCaptchaVerified && isPhoneValid && smsCooldownSeconds == 0 && !loading }
+    var canSendSms: Bool {
+        isPhoneValid && smsCooldownSeconds == 0 && !loading && (!captchaRequired || isCaptchaVerified)
+    }
     var canLogin: Bool { isPhoneValid && isSmsCodeValid && !loading }
 
     func onCaptchaSuccess(_ token: String) {
@@ -37,9 +48,12 @@ final class LoginViewModel: ObservableObject {
         loading = true
         Task {
             do {
-                try await APIService.sendSms(phone: phone, captchaToken: captchaToken)
+                try await APIService.sendSms(phone: phone, captchaToken: captchaToken.isEmpty ? nil : captchaToken)
                 info = "验证码已发送（测试环境默认 123456）"
                 startCooldown()
+            } catch let error as ApiError where error.code == "CAPTCHA_REQUIRED" {
+                captchaRequired = true
+                info = "检测到异常请求，请先完成安全校验"
             } catch {
                 info = "发送失败：\(error.localizedDescription)"
             }

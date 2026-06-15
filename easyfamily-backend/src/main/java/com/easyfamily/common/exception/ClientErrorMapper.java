@@ -11,6 +11,7 @@ public final class ClientErrorMapper {
 
     private static final Map<String, ErrorView> BUSINESS_ERROR_MAPPING = Map.ofEntries(
             entry("INVALID_CAPTCHA_TOKEN", new ErrorView("AUTH_FAILED", "人机校验已失效，请重新验证")),
+            entry("CAPTCHA_REQUIRED", new ErrorView("CAPTCHA_REQUIRED", "检测到频繁请求，请完成滑动验证后重试")),
             entry("CAPTCHA_CHALLENGE_NOT_FOUND", new ErrorView("AUTH_FAILED", "滑动验证码不存在，请刷新后重试")),
             entry("CAPTCHA_CHALLENGE_ALREADY_USED", new ErrorView("AUTH_FAILED", "滑动验证码已使用，请重新获取")),
             entry("CAPTCHA_CHALLENGE_EXPIRED", new ErrorView("AUTH_FAILED", "滑动验证码已过期，请重新获取")),

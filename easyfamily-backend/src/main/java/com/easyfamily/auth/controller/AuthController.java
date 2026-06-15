@@ -50,8 +50,8 @@ public class AuthController {
     }
 
     @PostMapping("/sms/send")
-    public ApiResponse<Void> sendSmsCode(@Valid @RequestBody SmsSendRequest request) {
-        authService.sendSmsCode(request);
+    public ApiResponse<Void> sendSmsCode(@Valid @RequestBody SmsSendRequest request, HttpServletRequest httpServletRequest) {
+        authService.sendSmsCode(request, resolveClientIp(httpServletRequest));
         return ApiResponse.ok(null);
     }
 

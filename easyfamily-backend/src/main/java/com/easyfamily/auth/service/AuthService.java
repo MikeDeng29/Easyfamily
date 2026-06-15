@@ -38,6 +38,8 @@ public class AuthService {
     private static final int SLIDE_MAX_BACKTRACK_PX = 8;
     private static final int SMS_CODE_TTL_SECONDS = 300;
     private static final String TEST_PHONE = "13800000000";
+    private static final int SMS_SEND_RISK_WINDOW_SECONDS = 600;
+    private static final int SMS_SEND_RISK_THRESHOLD = 2;
     private final JwtService jwtService;
     private final TokenBlacklistService tokenBlacklistService;
     private final LoginAuditLogService loginAuditLogService;
@@ -172,15 +174,21 @@ public class AuthService {
         return captchaToken;
     }
 
-    public void sendSmsCode(SmsSendRequest request) {
-        Integer captchaValid = jdbcTemplate.queryForObject(
-                "SELECT COUNT(1) FROM auth_captcha_tokens WHERE token = ? AND expire_at > CURRENT_TIMESTAMP",
-                Integer.class,
-                request.captchaToken()
-        );
-        if (captchaValid == null || captchaValid <= 0) {
-            throw new BusinessException("INVALID_CAPTCHA_TOKEN", "captcha token invalid or expired");
+    public void sendSmsCode(SmsSendRequest request, String clientIp) {
+        boolean captchaProvided = request.captchaToken() != null && !request.captchaToken().isBlank();
+        if (captchaProvided) {
+            Integer captchaValid = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(1) FROM auth_captcha_tokens WHERE token = ? AND expire_at > CURRENT_TIMESTAMP",
+                    Integer.class,
+                    request.captchaToken()
+            );
+            if (captchaValid == null || captchaValid <= 0) {
+                throw new BusinessException("INVALID_CAPTCHA_TOKEN", "captcha token invalid or expired");
+            }
+        } else if (isSmsSendRateLimited(request.phone(), clientIp)) {
+            throw new BusinessException("CAPTCHA_REQUIRED", "frequent sms requests detected, captcha required");
         }
+
         String code = (mockSmsCode != null && !mockSmsCode.isBlank())
                 ? mockSmsCode
                 : String.format("%06d", ThreadLocalRandom.current().nextInt(1_000_000));
@@ -201,6 +209,43 @@ public class AuthService {
                 code,
                 Timestamp.from(Instant.now().plusSeconds(SMS_CODE_TTL_SECONDS))
         );
+        jdbcTemplate.update(
+                """
+                        INSERT INTO auth_sms_send_logs(phone, client_ip, created_at)
+                        VALUES (?, ?, CURRENT_TIMESTAMP)
+                        """,
+                request.phone(),
+                clientIp
+        );
+    }
+
+    /**
+     * Returns true if the given phone number or client IP has requested an SMS
+     * code {@link #SMS_SEND_RISK_THRESHOLD} times or more within the last
+     * {@link #SMS_SEND_RISK_WINDOW_SECONDS} seconds, indicating the current
+     * request should be challenged with a slide captcha before sending again.
+     */
+    private boolean isSmsSendRateLimited(String phone, String clientIp) {
+        Timestamp windowStart = Timestamp.from(Instant.now().minusSeconds(SMS_SEND_RISK_WINDOW_SECONDS));
+        Integer phoneCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(1) FROM auth_sms_send_logs WHERE phone = ? AND created_at > ?",
+                Integer.class,
+                phone,
+                windowStart
+        );
+        if (phoneCount != null && phoneCount >= SMS_SEND_RISK_THRESHOLD) {
+            return true;
+        }
+        if (clientIp == null || clientIp.isBlank()) {
+            return false;
+        }
+        Integer ipCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(1) FROM auth_sms_send_logs WHERE client_ip = ? AND created_at > ?",
+                Integer.class,
+                clientIp,
+                windowStart
+        );
+        return ipCount != null && ipCount >= SMS_SEND_RISK_THRESHOLD;
     }
 
     public LoginResponse login(LoginRequest request, String clientIp, String userAgent) {

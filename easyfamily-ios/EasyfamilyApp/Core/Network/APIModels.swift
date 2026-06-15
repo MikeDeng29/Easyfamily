@@ -15,8 +15,14 @@ struct EmptyValue: Decodable {
 }
 
 struct ApiError: Error, LocalizedError {
+    let code: String?
     let message: String
     var errorDescription: String? { message }
+
+    init(code: String? = nil, message: String) {
+        self.code = code
+        self.message = message
+    }
 }
 
 // MARK: - Auth
@@ -52,7 +58,7 @@ struct CaptchaVerifyRequest: Encodable {
 
 struct SmsSendRequest: Encodable {
     let phone: String
-    let captchaToken: String
+    let captchaToken: String?
 }
 
 struct LoginRequest: Encodable {

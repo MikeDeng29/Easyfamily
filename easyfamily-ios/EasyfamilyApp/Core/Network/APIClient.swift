@@ -63,7 +63,7 @@ final class APIClient {
         }
         let envelope = try decoder.decode(ApiResponse<T>.self, from: data)
         guard envelope.code == "OK" else {
-            throw ApiError(message: envelope.message ?? envelope.code)
+            throw ApiError(code: envelope.code, message: envelope.message ?? envelope.code)
         }
         return envelope.data
     }

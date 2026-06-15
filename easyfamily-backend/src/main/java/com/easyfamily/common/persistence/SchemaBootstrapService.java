@@ -18,6 +18,7 @@ public class SchemaBootstrapService {
         createAuthCaptchaTokens();
         createAuthSlideCaptchaChallenges();
         createAuthSmsCodes();
+        createAuthSmsSendLogs();
         createRuntimeSettings();
         createTokenBlacklist();
         createUsers();
@@ -54,6 +55,19 @@ public class SchemaBootstrapService {
                   expire_at TIMESTAMP NOT NULL,
                   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                   INDEX idx_auth_sms_codes_expire_at (expire_at)
+                )
+                """);
+    }
+
+    private void createAuthSmsSendLogs() {
+        jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS auth_sms_send_logs (
+                  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                  phone VARCHAR(32) NOT NULL,
+                  client_ip VARCHAR(64),
+                  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  INDEX idx_auth_sms_send_logs_phone_created_at (phone, created_at),
+                  INDEX idx_auth_sms_send_logs_ip_created_at (client_ip, created_at)
                 )
                 """);
     }

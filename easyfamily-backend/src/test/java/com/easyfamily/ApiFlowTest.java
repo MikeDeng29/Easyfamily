@@ -103,6 +103,7 @@ class ApiFlowTest {
     private void clearBusinessTables() {
         jdbcTemplate.update("DELETE FROM token_blacklist");
         jdbcTemplate.update("DELETE FROM auth_sms_codes");
+        jdbcTemplate.update("DELETE FROM auth_sms_send_logs");
         jdbcTemplate.update("DELETE FROM auth_captcha_tokens");
         jdbcTemplate.update("DELETE FROM auth_slide_captcha_challenges");
         jdbcTemplate.update("DELETE FROM login_audit_logs");
@@ -577,6 +578,109 @@ class ApiFlowTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "phone", "13800138001",
+                                "captchaToken", captchaToken
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("OK"));
+    }
+
+    @Test
+    void smsSendWithoutCaptchaShouldSucceedOnFirstRequest() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/sms/send")
+                        .header("X-Forwarded-For", "10.0.0.10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "phone", "13700137000"
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("OK"));
+
+        String smsCode = jdbcTemplate.queryForObject(
+                "SELECT sms_code FROM auth_sms_codes WHERE phone = ?",
+                String.class,
+                "13700137000"
+        );
+        assertTrue(smsCode != null && !smsCode.isBlank());
+    }
+
+    @Test
+    void smsSendShouldRequireCaptchaAfterFrequentRequests() throws Exception {
+        String phone = "13700137001";
+
+        // First request: no captcha needed, succeeds.
+        mockMvc.perform(post("/api/v1/auth/sms/send")
+                        .header("X-Forwarded-For", "10.0.0.11")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "phone", phone
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("OK"));
+
+        // Second request within the risk window: still allowed without captcha
+        // (threshold is reached only once count >= 2 *before* this request).
+        mockMvc.perform(post("/api/v1/auth/sms/send")
+                        .header("X-Forwarded-For", "10.0.0.11")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "phone", phone
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("OK"));
+
+        // Third request: phone now has 2 prior sends within the window and no
+        // captchaToken supplied -> risk control kicks in.
+        mockMvc.perform(post("/api/v1/auth/sms/send")
+                        .header("X-Forwarded-For", "10.0.0.11")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "phone", phone
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("CAPTCHA_REQUIRED"));
+    }
+
+    @Test
+    void smsSendShouldSucceedWithValidCaptchaTokenAfterRateLimitTriggered() throws Exception {
+        String phone = "13700137002";
+
+        for (int i = 0; i < 2; i++) {
+            mockMvc.perform(post("/api/v1/auth/sms/send")
+                            .header("X-Forwarded-For", "10.0.0.12")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(Map.of(
+                                    "phone", phone
+                            ))))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value("OK"));
+        }
+
+        // Without captcha, the third request is challenged.
+        mockMvc.perform(post("/api/v1/auth/sms/send")
+                        .header("X-Forwarded-For", "10.0.0.12")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "phone", phone
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("CAPTCHA_REQUIRED"));
+
+        // With a valid captchaToken, the request is allowed despite the rate limit.
+        String captchaResponse = mockMvc.perform(post("/api/v1/auth/captcha/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "captchaProvider", "mock",
+                                "ticket", "ticket-rate-limit"
+                        ))))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String captchaToken = objectMapper.readTree(captchaResponse).path("data").path("captchaToken").asText();
+
+        mockMvc.perform(post("/api/v1/auth/sms/send")
+                        .header("X-Forwarded-For", "10.0.0.12")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "phone", phone,
                                 "captchaToken", captchaToken
                         ))))
                 .andExpect(status().isOk())

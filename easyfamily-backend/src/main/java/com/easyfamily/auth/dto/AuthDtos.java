@@ -51,7 +51,7 @@ public final class AuthDtos {
     public record SmsSendRequest(
             @Pattern(regexp = "^1\\d{10}$", message = "invalid mainland phone format")
             String phone,
-            @NotBlank String captchaToken
+            String captchaToken
     ) {
     }
 

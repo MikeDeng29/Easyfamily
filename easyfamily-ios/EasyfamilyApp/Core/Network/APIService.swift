@@ -39,7 +39,7 @@ enum APIService {
         return result.captchaToken
     }
 
-    static func sendSms(phone: String, captchaToken: String) async throws {
+    static func sendSms(phone: String, captchaToken: String? = nil) async throws {
         let _: EmptyValue? = try await client.request(
             "/api/v1/auth/sms/send", method: "POST", body: SmsSendRequest(phone: phone, captchaToken: captchaToken)
         )

@@ -78,6 +78,12 @@ paths:
     post:
       tags: [Auth]
       summary: Send SMS code for login/register
+      description: >-
+        captchaToken is optional for normal requests. If the same phone number
+        or client IP has requested an SMS code 2 or more times within the last
+        10 minutes and no valid captchaToken is supplied, the response is a
+        business error with code CAPTCHA_REQUIRED. The client should then run
+        the slide captcha flow to obtain a captchaToken and retry with it.
       security: []
       requestBody:
         required: true
@@ -87,7 +93,7 @@ paths:
               $ref: '#/components/schemas/SmsSendRequest'
       responses:
         '200':
-          description: Api response
+          description: Api response (or CAPTCHA_REQUIRED business error when risk control is triggered)
           content:
             application/json:
               schema:
@@ -553,6 +559,7 @@ components:
             - SERVICE_UNAVAILABLE
             - INTERNAL_ERROR
             - BIZ_ERROR
+            - CAPTCHA_REQUIRED
           example: AUTH_FAILED
         message:
           type: string
@@ -735,7 +742,15 @@ components:
         captchaToken:
           type: string
           minLength: 1
-      required: [phone, captchaToken]
+          description: >-
+            Optional. Not required for a normal request. If the backend detects
+            risk (e.g. the same phone number or client IP has requested an SMS
+            code 2 or more times within the last 10 minutes) and no valid
+            captchaToken is supplied, the request fails with error code
+            CAPTCHA_REQUIRED. The client should then complete the slide
+            captcha flow (/auth/captcha/slide/init + /auth/captcha/slide/verify)
+            to obtain a captchaToken and retry this request with it.
+      required: [phone]
 
     SlideCaptchaInitRequest:
       type: object
