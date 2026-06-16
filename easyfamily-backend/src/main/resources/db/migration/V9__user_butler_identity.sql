@@ -9,6 +9,6 @@
 -- to include these columns for brand-new databases, while the ALTER TABLE
 -- statements below handle pre-existing `users` tables.
 
-ALTER TABLE users ADD COLUMN IF NOT EXISTS butler_name VARCHAR(10) NULL AFTER nickname;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS butler_avatar_id INT NULL AFTER butler_name;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS butler_persona VARCHAR(16) NULL AFTER butler_avatar_id;
+ALTER TABLE users ADD COLUMN butler_name VARCHAR(10) NULL AFTER nickname;
+ALTER TABLE users ADD COLUMN butler_avatar_id INT NULL AFTER butler_name;
+ALTER TABLE users ADD COLUMN butler_persona VARCHAR(16) NULL AFTER butler_avatar_id;

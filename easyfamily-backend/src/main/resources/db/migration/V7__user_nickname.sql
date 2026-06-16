@@ -22,4 +22,4 @@ CREATE TABLE IF NOT EXISTS users (
   INDEX idx_users_phone (phone)
 );
 
-ALTER TABLE users ADD COLUMN IF NOT EXISTS nickname VARCHAR(64) NULL AFTER phone;
+ALTER TABLE users ADD COLUMN nickname VARCHAR(64) NULL AFTER phone;
