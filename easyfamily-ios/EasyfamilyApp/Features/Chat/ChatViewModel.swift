@@ -15,6 +15,7 @@ final class ChatViewModel: ObservableObject {
     @Published var pendingBillAction: BillActionData?
     @Published var nickname: String?
     @Published var nicknameInput: String = ""
+    @Published var isProfileLoaded: Bool = false
 
     // MARK: - Butler identity
 
@@ -37,6 +38,8 @@ final class ChatViewModel: ObservableObject {
 
     init() {
         nickname = profileStore.loadNickname()
+        // If nickname is cached locally, profile is considered loaded (no server wait needed)
+        isProfileLoaded = profileStore.loadNickname() != nil
         butlerSetupDone = profileStore.isButlerSetupDone()
         if let cachedName = profileStore.loadButlerName() {
             butlerName = cachedName
@@ -70,6 +73,7 @@ final class ChatViewModel: ObservableObject {
         } catch {
             // Keep showing the locally cached values (already set in init) when offline.
         }
+        isProfileLoaded = true
     }
 
     func saveNickname(token: String) {

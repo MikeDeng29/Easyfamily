@@ -19,7 +19,11 @@ struct ChatView: View {
                     ScrollViewReader { proxy in
                         VStack(alignment: .leading, spacing: 16) {
                             if viewModel.messages.isEmpty {
-                                if viewModel.nickname == nil {
+                                if !viewModel.isProfileLoaded {
+                                    ProgressView()
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                        .padding(.top, 60)
+                                } else if viewModel.nickname == nil {
                                     nicknameOnboardingView
                                 } else {
                                     welcomeView
