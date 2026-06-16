@@ -324,7 +324,7 @@ struct ChatView: View {
             }
 
             VStack(alignment: .leading) {
-                Text(message.content)
+                Text(message.content.strippingSMPEmoji)
                 if message.isStreaming {
                     ProgressView().scaleEffect(0.7)
                 }
