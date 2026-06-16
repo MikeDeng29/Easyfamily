@@ -195,8 +195,10 @@ final class ChatViewModel: ObservableObject {
         pendingBillAction = nil
         Task {
             do {
-                _ = try await APIService.createBill(token: token, category: action.category, amount: action.amount, note: action.note, billedAt: action.date)
-                messages.append(ChatMessage(role: "ai", content: "✅ 已记录 \(action.category) ¥\(String(format: "%.2f", action.amount))"))
+                let direction = action.direction ?? "expense"
+                _ = try await APIService.createBill(token: token, direction: direction, category: action.category, amount: action.amount, note: action.note, billedAt: action.date)
+                let label = direction == "income" ? "收入" : "支出"
+                messages.append(ChatMessage(role: "ai", content: "已记录 \(label) \(action.category) ¥\(String(format: "%.2f", action.amount))"))
             } catch {
                 messages.append(ChatMessage(role: "ai", content: "记录失败：\(error.localizedDescription)"))
             }

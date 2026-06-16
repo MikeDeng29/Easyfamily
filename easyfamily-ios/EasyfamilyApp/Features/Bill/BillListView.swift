@@ -1,5 +1,7 @@
 import SwiftUI
 
+private let incomeGreen = Color(red: 0.2, green: 0.7, blue: 0.4)
+
 struct BillListView: View {
     @EnvironmentObject private var session: AuthSession
     @StateObject private var viewModel = BillViewModel()
@@ -17,18 +19,16 @@ struct BillListView: View {
                 }
 
                 if let stats = viewModel.stats {
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text("本月支出").font(.caption).foregroundColor(AppPalette.textSecondary)
-                            Text("¥\(stats.totalAmount, specifier: "%.2f")")
-                                .font(.title2.bold())
-                                .foregroundColor(AppPalette.coral)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing) {
-                            Text("账单数").font(.caption).foregroundColor(AppPalette.textSecondary)
-                            Text("\(stats.count)").font(.title3.bold())
-                        }
+                    HStack(spacing: 0) {
+                        summaryColumn(title: "收入", amount: stats.totalIncome, color: incomeGreen)
+                        Divider().frame(height: 40)
+                        summaryColumn(title: "支出", amount: stats.totalExpense, color: AppPalette.coral)
+                        Divider().frame(height: 40)
+                        summaryColumn(
+                            title: "结余",
+                            amount: stats.netSavings,
+                            color: stats.netSavings >= 0 ? incomeGreen : AppPalette.coral
+                        )
                     }
                     .padding(14)
                     .background(AppPalette.surface)
@@ -50,9 +50,14 @@ struct BillListView: View {
                         .padding(.top, 40)
                 } else {
                     ForEach(viewModel.bills) { bill in
+                        let isIncome = bill.direction == "income"
+                        let amountColor = isIncome ? incomeGreen : AppPalette.coral
+                        let amountPrefix = isIncome ? "+" : "-"
+
                         HStack {
-                            Text(BillCategoryIcon.emoji(for: bill.category))
+                            Image(systemName: isIncome ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
                                 .font(.title2)
+                                .foregroundColor(amountColor)
                             VStack(alignment: .leading) {
                                 Text(bill.note?.isEmpty == false ? bill.note! : bill.category)
                                     .font(.subheadline.bold())
@@ -61,9 +66,9 @@ struct BillListView: View {
                                     .foregroundColor(AppPalette.textSecondary)
                             }
                             Spacer()
-                            Text("¥\(bill.amount, specifier: "%.2f")")
+                            Text("\(amountPrefix)¥\(bill.amount, specifier: "%.2f")")
                                 .font(.subheadline.bold())
-                                .foregroundColor(AppPalette.coral)
+                                .foregroundColor(amountColor)
                             Button {
                                 guard let token = session.accessToken else { return }
                                 Task { await viewModel.deleteBill(token: token, id: bill.id) }
@@ -85,8 +90,20 @@ struct BillListView: View {
         .navigationTitle("账单")
         .task {
             if let token = session.accessToken {
-                await viewModel.load(token: token)
+                viewModel.load(token: token)
             }
         }
+    }
+
+    private func summaryColumn(title: String, amount: Double, color: Color) -> some View {
+        VStack(spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(AppPalette.textSecondary)
+            Text("¥\(amount, specifier: "%.2f")")
+                .font(.subheadline.bold())
+                .foregroundColor(color)
+        }
+        .frame(maxWidth: .infinity)
     }
 }

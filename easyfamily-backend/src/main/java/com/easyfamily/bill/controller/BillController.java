@@ -3,6 +3,8 @@ package com.easyfamily.bill.controller;
 import com.easyfamily.bill.dto.BillDtos.BillItem;
 import com.easyfamily.bill.dto.BillDtos.BillStatsDto;
 import com.easyfamily.bill.dto.BillDtos.CreateBillRequest;
+import com.easyfamily.bill.dto.BillDtos.MonthlyTrendItem;
+import com.easyfamily.bill.dto.BillDtos.SecurityReportDto;
 import com.easyfamily.bill.service.BillService;
 import com.easyfamily.common.api.ApiResponse;
 import com.easyfamily.security.AuthContext;
@@ -61,5 +63,19 @@ public class BillController {
     public ApiResponse<BillStatsDto> stats(@RequestParam(required = false) String month) {
         var user = AuthContext.currentUser();
         return ApiResponse.ok(billService.stats(user.userId(), month));
+    }
+
+    @GetMapping("/monthly-trend")
+    public ApiResponse<List<MonthlyTrendItem>> monthlyTrend(
+            @RequestParam(defaultValue = "6") int months
+    ) {
+        var user = AuthContext.currentUser();
+        return ApiResponse.ok(billService.getMonthlyTrend(user.userId(), Math.min(months, 12)));
+    }
+
+    @GetMapping("/security-report")
+    public ApiResponse<SecurityReportDto> securityReport() {
+        var user = AuthContext.currentUser();
+        return ApiResponse.ok(billService.getSecurityReport(user.userId()));
     }
 }

@@ -348,8 +348,11 @@ struct ChatView: View {
     }
 
     private func billActionCard(_ action: BillActionData) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("💰 记录支出？").font(.subheadline.bold())
+        let isIncome = action.direction == "income"
+        let accentColor = isIncome ? Color(red: 0.2, green: 0.7, blue: 0.4) : AppPalette.coral
+        return VStack(alignment: .leading, spacing: 6) {
+            Text(isIncome ? "记录收入？" : "记录支出？")
+                .font(.subheadline.bold())
             Text("分类：\(action.category) · 金额：¥\(String(format: "%.2f", action.amount)) · 日期：\(action.date)")
                 .font(.footnote)
             if let note = action.note, !note.isEmpty {
@@ -366,11 +369,11 @@ struct ChatView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(AppPalette.coral)
+                .tint(accentColor)
             }
         }
         .padding(12)
-        .background(AppPalette.softCoral)
+        .background(accentColor.opacity(0.1))
         .cornerRadius(14)
     }
 

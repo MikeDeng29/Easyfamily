@@ -150,8 +150,8 @@ enum APIService {
         return result
     }
 
-    static func createBill(token: String, category: String, amount: Double, note: String?, billedAt: String) async throws -> BillItemDto {
-        let body = BillCreateRequest(category: category, amount: amount, note: note, billedAt: billedAt)
+    static func createBill(token: String, direction: String = "expense", category: String, amount: Double, note: String?, billedAt: String) async throws -> BillItemDto {
+        let body = BillCreateRequest(direction: direction, category: category, amount: amount, note: note, billedAt: billedAt)
         guard let result: BillItemDto = try await client.request("/api/v1/bill", method: "POST", token: token, body: body) else {
             throw ApiError(message: "empty response")
         }
@@ -160,6 +160,20 @@ enum APIService {
 
     static func deleteBill(token: String, id: Int64) async throws {
         let _: EmptyValue? = try await client.request("/api/v1/bill/\(id)", method: "DELETE", token: token)
+    }
+
+    static func getMonthlyTrend(token: String, months: Int = 6) async throws -> [MonthlyTrendItemDto] {
+        let result: [MonthlyTrendItemDto]? = try await client.request(
+            "/api/v1/bill/monthly-trend", method: "GET", token: token, query: ["months": "\(months)"]
+        )
+        return result ?? []
+    }
+
+    static func getSecurityReport(token: String) async throws -> SecurityReportDto {
+        guard let result: SecurityReportDto = try await client.request(
+            "/api/v1/bill/security-report", method: "GET", token: token
+        ) else { throw ApiError(message: "empty response") }
+        return result
     }
 
     // MARK: - Vehicle

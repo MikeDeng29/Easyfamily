@@ -79,18 +79,24 @@ public class ChatController {
             var stats = billService.stats(currentUser.userId(), currentMonth);
             var recent = billService.list(currentUser.userId(), currentMonth);
             contextBuilder.append("[本月账单数据 (").append(currentMonth).append(")：\n");
-            contextBuilder.append("  总支出: ").append(stats.totalAmount()).append(" 元，共 ").append(stats.count()).append(" 笔\n");
+            contextBuilder.append("  收入: ").append(stats.totalIncome()).append(" 元")
+                    .append("，支出: ").append(stats.totalExpense()).append(" 元")
+                    .append("，净结余: ").append(stats.netSavings()).append(" 元")
+                    .append("，共 ").append(stats.count()).append(" 笔\n");
             if (!stats.byCategory().isEmpty()) {
                 contextBuilder.append("  分类明细：\n");
                 for (var cat : stats.byCategory()) {
-                    contextBuilder.append("    - ").append(cat.category()).append(": ").append(cat.amount()).append(" 元 (").append(cat.count()).append(" 笔)\n");
+                    contextBuilder.append("    - [").append(cat.direction()).append("] ")
+                            .append(cat.category()).append(": ").append(cat.amount())
+                            .append(" 元 (").append(cat.count()).append(" 笔)\n");
                 }
             }
             if (!recent.isEmpty()) {
                 contextBuilder.append("  最近账单记录：\n");
                 recent.stream().limit(10).forEach(b -> {
                     String noteStr = (b.note() != null && !b.note().isBlank()) ? " (" + b.note() + ")" : "";
-                    contextBuilder.append("    - ").append(b.billedAt()).append(" ").append(b.category()).append(" ").append(b.amount()).append(" 元").append(noteStr).append("\n");
+                    contextBuilder.append("    - ").append(b.billedAt()).append(" [").append(b.direction()).append("] ")
+                            .append(b.category()).append(" ").append(b.amount()).append(" 元").append(noteStr).append("\n");
                 });
             }
             contextBuilder.append("]\n");

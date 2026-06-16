@@ -151,6 +151,7 @@ struct FamilyMemberItem: Decodable, Identifiable {
 
 struct BillItemDto: Decodable, Identifiable {
     let id: Int64
+    let direction: String   // "income" | "expense"
     let category: String
     let amount: Double
     let note: String?
@@ -159,24 +160,51 @@ struct BillItemDto: Decodable, Identifiable {
 }
 
 struct BillCategoryStatDto: Decodable, Identifiable {
+    let direction: String
     let category: String
     let amount: Double
     let count: Int
 
-    var id: String { category }
+    var id: String { "\(direction)_\(category)" }
 }
 
 struct BillStatsDto: Decodable {
-    let totalAmount: Double
+    let totalIncome: Double
+    let totalExpense: Double
+    let netSavings: Double
+    let savingsRate: Double?
     let count: Int
     let byCategory: [BillCategoryStatDto]
 }
 
 struct BillCreateRequest: Encodable {
+    let direction: String
     let category: String
     let amount: Double
     let note: String?
     let billedAt: String
+}
+
+struct MonthlyTrendItemDto: Decodable, Identifiable {
+    let month: String
+    let totalIncome: Double
+    let totalExpense: Double
+    let netSavings: Double
+    var id: String { month }
+}
+
+struct SecurityReportDto: Decodable {
+    let hasEnoughData: Bool
+    let period: String
+    let avgMonthlyIncome: Double
+    let avgMonthlyExpense: Double
+    let avgMonthlySavings: Double
+    let savingsRate: Double?
+    let savingsRateStatus: Int   // 0=红 1=黄 2=绿
+    let emergencyFundMonths: Double
+    let emergencyFundStatus: Int
+    let healthScore: Int
+    let healthLevel: String
 }
 
 // MARK: - Vehicle
@@ -254,6 +282,7 @@ struct ChatRequest: Encodable {
 }
 
 struct BillActionData: Decodable {
+    let direction: String?   // optional，旧 AI 回复可能没有，默认 "expense"
     let category: String
     let amount: Double
     let note: String?
