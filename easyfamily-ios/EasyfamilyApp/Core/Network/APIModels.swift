@@ -72,6 +72,27 @@ struct LoginResponse: Decodable {
     let refreshToken: String?
 }
 
+// MARK: - User Profile
+
+struct UserProfile: Decodable {
+    let userId: String
+    let phone: String?
+    let nickname: String?
+    let butlerName: String?
+    let butlerAvatarId: Int?
+    let butlerPersona: String?
+}
+
+struct UpdateNicknameRequest: Encodable {
+    let nickname: String
+}
+
+struct UpdateButlerRequest: Encodable {
+    let butlerName: String?
+    let butlerAvatarId: Int?
+    let butlerPersona: String?
+}
+
 // MARK: - Phones
 
 struct PhoneItem: Decodable, Identifiable {

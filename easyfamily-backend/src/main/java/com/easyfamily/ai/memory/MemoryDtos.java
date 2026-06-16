@@ -7,6 +7,7 @@ public final class MemoryDtos {
     public record MemoryItem(
             Long id,
             String content,
+            String category,
             long createdAt
     ) {}
 }

@@ -369,6 +369,60 @@ paths:
         '401':
           description: Missing/invalid access token
 
+  /api/v1/user/profile:
+    get:
+      tags: [User]
+      summary: Get current user's profile (userId, phone, nickname)
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseUserProfile'
+        '401':
+          description: Missing/invalid access token
+    put:
+      tags: [User]
+      summary: Update current user's nickname
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNicknameRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseUserProfile'
+        '400':
+          description: Invalid nickname (must be 1-20 characters)
+        '401':
+          description: Missing/invalid access token
+
+  /api/v1/user/butler:
+    put:
+      tags: [User]
+      summary: Partially update current user's AI butler identity (name, avatar, persona)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateButlerRequest'
+      responses:
+        '200':
+          description: Api response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseUserProfile'
+        '401':
+          description: Missing/invalid access token
+
   /api/v1/memory:
     get:
       tags: [Memory]
@@ -616,6 +670,15 @@ components:
           $ref: '#/components/schemas/BindingQueryResponse'
       required: [code, message, data]
 
+    ApiResponseUserProfile:
+      type: object
+      properties:
+        code: { type: string, example: OK }
+        message: { type: string, example: success }
+        data:
+          $ref: '#/components/schemas/UserProfile'
+      required: [code, message, data]
+
     ApiResponsePhoneList:
       type: object
       properties:
@@ -715,6 +778,11 @@ components:
         content:
           type: string
           example: 用户家里有一只叫旺财的狗
+        category:
+          type: string
+          description: Memory category
+          enum: [family, vehicle, preference, habit, other]
+          example: family
         createdAt:
           type: integer
           format: int64
@@ -888,6 +956,66 @@ components:
         source: { type: string, example: provider-simulated }
         queryTimestamp: { type: integer, format: int64 }
       required: [phone, bankBound, socialBound, source, queryTimestamp]
+
+    UserProfile:
+      type: object
+      properties:
+        userId:
+          type: string
+          example: "13800138000"
+        phone:
+          type: string
+          nullable: true
+          example: "13800138000"
+        nickname:
+          type: string
+          nullable: true
+          example: "小明"
+        butlerName:
+          type: string
+          description: Display name of the user's AI butler. Defaults to "青鸟管家" if not customized.
+          example: "青鸟管家"
+        butlerAvatarId:
+          type: integer
+          description: Avatar id for the AI butler, one of 1-8. Defaults to 1 if not customized.
+          minimum: 1
+          maximum: 8
+          example: 1
+        butlerPersona:
+          type: string
+          description: Tone/persona of the AI butler. Defaults to "warm" if not customized.
+          enum: [warm, strict, humorous]
+          example: warm
+      required: [userId, phone, nickname, butlerName, butlerAvatarId, butlerPersona]
+
+    UpdateNicknameRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 20
+          example: "小明"
+      required: [nickname]
+
+    UpdateButlerRequest:
+      type: object
+      description: Partial update for AI butler identity customization. All fields are optional; only provided (non-null) fields are updated.
+      properties:
+        butlerName:
+          type: string
+          minLength: 1
+          maxLength: 10
+          example: "小蓝"
+        butlerAvatarId:
+          type: integer
+          minimum: 1
+          maximum: 8
+          example: 5
+        butlerPersona:
+          type: string
+          enum: [warm, strict, humorous]
+          example: strict
 
     PhoneItem:
       type: object

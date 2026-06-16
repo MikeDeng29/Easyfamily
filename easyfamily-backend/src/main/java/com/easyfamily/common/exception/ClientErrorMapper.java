@@ -41,7 +41,10 @@ public final class ClientErrorMapper {
             entry("BILL_NOT_FOUND", new ErrorView("BIZ_ERROR", "账单不存在或无权操作")),
             entry("BILL_INVALID_DATE", new ErrorView("INVALID_PARAM", "日期格式错误，请使用 yyyy-MM-dd")),
             entry("BILL_INVALID_MONTH", new ErrorView("INVALID_PARAM", "月份格式错误，请使用 yyyy-MM")),
-            entry("MEMORY_NOT_FOUND", new ErrorView("BIZ_ERROR", "记忆不存在或无权操作"))
+            entry("MEMORY_NOT_FOUND", new ErrorView("BIZ_ERROR", "记忆不存在或无权操作")),
+            entry("INVALID_BUTLER_NAME", new ErrorView("INVALID_PARAM", "管家名称长度需在1-10个字符之间")),
+            entry("INVALID_BUTLER_AVATAR_ID", new ErrorView("INVALID_PARAM", "管家头像编号必须在1-8之间")),
+            entry("INVALID_BUTLER_PERSONA", new ErrorView("INVALID_PARAM", "管家语气只能是 warm/strict/humorous 之一"))
     );
 
     private ClientErrorMapper() {

@@ -19,6 +19,7 @@ struct SlideCaptchaView: View {
     @State private var trackWidthPx: CGFloat = 0
     @State private var tracks: [SlideTrackPoint] = []
     @State private var dragStartTime: Date?
+    @State private var shakeOffset: CGFloat = 0
 
     private let svgWidth: CGFloat = 320
     private let knobSize: CGFloat = 44
@@ -69,7 +70,7 @@ struct SlideCaptchaView: View {
                         .fill(knobColor)
                         .frame(width: knobSize, height: knobSize)
                         .overlay(Text(knobLabel).foregroundColor(.white).font(.headline))
-                        .offset(x: currentOffsetPx)
+                        .offset(x: currentOffsetPx + shakeOffset)
                         .gesture(dragGesture)
                 }
                 .onAppear { trackWidthPx = geo.size.width }
@@ -164,8 +165,17 @@ struct SlideCaptchaView: View {
         } catch {
             status = .error
             info = "验证失败，请重试"
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            await shake()
+            info = "验证失败，正在重新加载…"
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
             await loadChallenge()
+        }
+    }
+
+    private func shake() async {
+        for offset: CGFloat in [10, -10, 8, -8, 4, -4, 0] {
+            withAnimation(.linear(duration: 0.05)) { shakeOffset = offset }
+            try? await Task.sleep(nanoseconds: 50_000_000)
         }
     }
 

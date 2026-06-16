@@ -22,6 +22,7 @@ final class LoginViewModel: ObservableObject {
     @Published var smsCooldownSeconds: Int = 0
     @Published var loading: Bool = false
     @Published var info: String = ""
+    @Published var infoIsError: Bool = false
 
     private var cooldownTimer: Timer?
 
@@ -35,7 +36,9 @@ final class LoginViewModel: ObservableObject {
 
     func onCaptchaSuccess(_ token: String) {
         captchaToken = token
-        info = ""
+        info = "安全校验通过，正在重新发送验证码…"
+        infoIsError = false
+        sendSms()
     }
 
     func resetCaptcha() {
@@ -49,13 +52,16 @@ final class LoginViewModel: ObservableObject {
         Task {
             do {
                 try await APIService.sendSms(phone: phone, captchaToken: captchaToken.isEmpty ? nil : captchaToken)
-                info = "验证码已发送（测试环境默认 123456）"
+                info = "验证码已发送，请查收短信"
+                infoIsError = false
                 startCooldown()
             } catch let error as ApiError where error.code == "CAPTCHA_REQUIRED" {
                 captchaRequired = true
-                info = "检测到异常请求，请先完成安全校验"
+                info = "为保障账号安全，请先完成下方验证"
+                infoIsError = false
             } catch {
                 info = "发送失败：\(error.localizedDescription)"
+                infoIsError = true
             }
             loading = false
         }
@@ -68,9 +74,11 @@ final class LoginViewModel: ObservableObject {
         do {
             let result = try await APIService.login(phone: phone, smsCode: smsCode)
             info = "登录成功"
+            infoIsError = false
             session.login(userId: result.userId, accessToken: result.accessToken)
         } catch {
             info = "登录失败：\(error.localizedDescription)"
+            infoIsError = true
         }
     }
 
@@ -89,9 +97,11 @@ final class LoginViewModel: ObservableObject {
             smsCode = testCode
             captchaToken = token
             info = "登录成功"
+            infoIsError = false
             session.login(userId: result.userId, accessToken: result.accessToken)
         } catch {
             info = "一键登录失败：\(error.localizedDescription)"
+            infoIsError = true
         }
     }
 

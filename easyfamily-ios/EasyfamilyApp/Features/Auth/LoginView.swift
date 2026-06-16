@@ -14,59 +14,71 @@ struct LoginView: View {
             .ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 36) {
-                    brandHeader
+                ScrollViewReader { proxy in
+                    VStack(spacing: 36) {
+                        brandHeader
 
-                    VStack(alignment: .leading, spacing: 16) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("手机号登录")
-                                .font(.title3.bold())
-                                .foregroundColor(AppPalette.textPrimary)
-                            Text("未注册的手机号将自动创建账号")
-                                .font(.caption)
-                                .foregroundColor(AppPalette.textSecondary)
-                        }
-
-                        phoneField
-
-                        captchaSection
-                            .animation(.easeInOut(duration: 0.25), value: viewModel.captchaRequired)
-
-                        smsRow
-
-                        VStack(spacing: 8) {
-                            Button {
-                                Task { await viewModel.login(session: session) }
-                            } label: {
-                                buttonLabel(title: "登录", color: AppPalette.coralDark)
-                            }
-                            .disabled(!viewModel.canLogin)
-                            .opacity(viewModel.canLogin ? 1 : 0.5)
-
-                            if !viewModel.canLogin && !viewModel.loading {
-                                Text("请先完成手机号与验证码填写")
-                                    .font(.caption2)
+                        VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("手机号登录")
+                                    .font(.title3.bold())
+                                    .foregroundColor(AppPalette.textPrimary)
+                                Text("未注册的手机号将自动创建账号")
+                                    .font(.caption)
                                     .foregroundColor(AppPalette.textSecondary)
                             }
+
+                            phoneField
+
+                            captchaSection
+                                .id("captcha")
+                                .animation(.easeInOut(duration: 0.25), value: viewModel.captchaRequired)
+
+                            smsRow
+
+                            VStack(spacing: 8) {
+                                Button {
+                                    Task { await viewModel.login(session: session) }
+                                } label: {
+                                    buttonLabel(title: "登录", color: AppPalette.coralDark)
+                                }
+                                .disabled(!viewModel.canLogin)
+                                .opacity(viewModel.canLogin ? 1 : 0.5)
+
+                                if !viewModel.canLogin && !viewModel.loading && !viewModel.phone.isEmpty {
+                                    Text("请先完成手机号与验证码填写")
+                                        .font(.caption2)
+                                        .foregroundColor(AppPalette.textSecondary)
+                                }
+                            }
+
+                            agreementText
+
+                            if !viewModel.info.isEmpty {
+                                Text(viewModel.info)
+                                    .font(.caption)
+                                    .foregroundColor(viewModel.infoIsError ? AppPalette.error : AppPalette.textSecondary)
+                            }
+
+                            #if DEBUG
+                            quickLoginButton
+                            #endif
                         }
-
-                        agreementText
-
-                        if !viewModel.info.isEmpty {
-                            Text(viewModel.info)
-                                .font(.caption)
-                                .foregroundColor(AppPalette.textSecondary)
-                        }
-
-                        quickLoginButton
+                        .padding(20)
+                        .background(AppPalette.surface)
+                        .cornerRadius(20)
+                        .padding(.horizontal, 20)
                     }
-                    .padding(20)
-                    .background(AppPalette.surface)
-                    .cornerRadius(20)
-                    .padding(.horizontal, 20)
+                    .padding(.top, 60)
+                    .padding(.bottom, 24)
+                    .onChange(of: viewModel.captchaRequired) {
+                        if viewModel.captchaRequired {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                proxy.scrollTo("captcha", anchor: .center)
+                            }
+                        }
+                    }
                 }
-                .padding(.top, 60)
-                .padding(.bottom, 24)
             }
         }
     }
@@ -81,7 +93,7 @@ struct LoginView: View {
                 .frame(width: 72, height: 72)
                 .background(Color.white)
                 .clipShape(RoundedRectangle(cornerRadius: 18))
-            Text("easyfamily")
+            Text("青鸟管家")
                 .font(.title.bold())
                 .foregroundColor(.white)
             Text("AI 智能家庭守护")
@@ -176,14 +188,13 @@ struct LoginView: View {
             } label: {
                 Text(viewModel.smsCooldownSeconds > 0 ? "\(viewModel.smsCooldownSeconds)s" : "获取验证码")
                     .font(.subheadline)
-                    .foregroundColor(viewModel.smsCooldownSeconds > 0 ? AppPalette.textSecondary : .white)
+                    .foregroundColor(viewModel.canSendSms ? .white : AppPalette.textSecondary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
-                    .background(viewModel.smsCooldownSeconds > 0 ? AppPalette.background : AppPalette.violet)
+                    .background(viewModel.canSendSms ? AppPalette.violet : AppPalette.disabledSurface)
                     .cornerRadius(10)
             }
             .disabled(!viewModel.canSendSms)
-            .opacity(viewModel.canSendSms || viewModel.smsCooldownSeconds > 0 ? 1 : 0.5)
         }
     }
 

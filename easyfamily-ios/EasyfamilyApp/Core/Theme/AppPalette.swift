@@ -11,6 +11,8 @@ enum AppPalette {
     static let surface = Color(hex: 0xFFFFFF)
     static let softCoral = Color(hex: 0xFFF0EB)
     static let softViolet = Color(hex: 0xF3EEFF)
+    static let softAmber = Color(hex: 0xFFF6E3)
+    static let disabledSurface = Color(hex: 0xF0EDF2)
 
     static let textPrimary = Color(hex: 0x2D2535)
     static let textSecondary = Color(hex: 0x8A7F92)

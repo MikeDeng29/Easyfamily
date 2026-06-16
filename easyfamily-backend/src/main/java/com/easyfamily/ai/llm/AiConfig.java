@@ -1,5 +1,6 @@
 package com.easyfamily.ai.llm;
 
+import com.easyfamily.ai.embedding.QwenEmbeddingProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -30,6 +31,9 @@ public class AiConfig {
 
     @Value("${easyfamily.ai.qwen.timeout-ms:10000}")
     private long qwenTimeoutMs;
+
+    @Value("${easyfamily.ai.qwen.embedding-model:text-embedding-v2}")
+    private String qwenEmbeddingModel;
 
     @Value("${easyfamily.ai.claude.api-key:}")
     private String claudeApiKey;
@@ -69,6 +73,14 @@ public class AiConfig {
             ObjectMapper objectMapper
     ) {
         return new ClaudeLlmProvider(llmRestTemplate, objectMapper, claudeApiKey);
+    }
+
+    @Bean
+    public QwenEmbeddingProvider qwenEmbeddingProvider(
+            RestTemplate llmRestTemplate,
+            ObjectMapper objectMapper
+    ) {
+        return new QwenEmbeddingProvider(llmRestTemplate, objectMapper, qwenApiKey, qwenEmbeddingModel);
     }
 
     @Bean

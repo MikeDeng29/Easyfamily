@@ -273,6 +273,182 @@ class ApiFlowTest {
     }
 
     @Test
+    void unauthorizedProfileAccessShouldFail() throws Exception {
+        mockMvc.perform(get("/api/v1/user/profile"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+
+        mockMvc.perform(put("/api/v1/user/profile")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("nickname", "小明"))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    void updateAndFetchNicknameShouldSucceed() throws Exception {
+        // Initially no nickname set
+        mockMvc.perform(get("/api/v1/user/profile")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("OK"))
+                .andExpect(jsonPath("$.data.userId").value("U13800138000"))
+                .andExpect(jsonPath("$.data.phone").value("13800138000"))
+                .andExpect(jsonPath("$.data.nickname").doesNotExist());
+
+        mockMvc.perform(put("/api/v1/user/profile")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("nickname", "小明"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("OK"))
+                .andExpect(jsonPath("$.data.nickname").value("小明"));
+
+        mockMvc.perform(get("/api/v1/user/profile")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("OK"))
+                .andExpect(jsonPath("$.data.userId").value("U13800138000"))
+                .andExpect(jsonPath("$.data.phone").value("13800138000"))
+                .andExpect(jsonPath("$.data.nickname").value("小明"));
+    }
+
+    @Test
+    void updateNicknameWithInvalidLengthShouldFail() throws Exception {
+        // Empty nickname is rejected by @NotBlank/@Size validation
+        mockMvc.perform(put("/api/v1/user/profile")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("nickname", ""))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+
+        // 21-character nickname exceeds the 20-character limit
+        mockMvc.perform(put("/api/v1/user/profile")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("nickname", "a".repeat(21)))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+    }
+
+    @Test
+    void getProfileShouldReturnDefaultButlerFieldsWhenNotSet() throws Exception {
+        mockMvc.perform(get("/api/v1/user/profile")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("OK"))
+                .andExpect(jsonPath("$.data.butlerName").value("青鸟管家"))
+                .andExpect(jsonPath("$.data.butlerAvatarId").value(1))
+                .andExpect(jsonPath("$.data.butlerPersona").value("warm"));
+    }
+
+    @Test
+    void updateButlerShouldPersistAndReturnUpdatedFields() throws Exception {
+        mockMvc.perform(put("/api/v1/user/butler")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "butlerName", "小蓝",
+                                "butlerAvatarId", 5,
+                                "butlerPersona", "strict"
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("OK"))
+                .andExpect(jsonPath("$.data.butlerName").value("小蓝"))
+                .andExpect(jsonPath("$.data.butlerAvatarId").value(5))
+                .andExpect(jsonPath("$.data.butlerPersona").value("strict"));
+
+        mockMvc.perform(get("/api/v1/user/profile")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("OK"))
+                .andExpect(jsonPath("$.data.butlerName").value("小蓝"))
+                .andExpect(jsonPath("$.data.butlerAvatarId").value(5))
+                .andExpect(jsonPath("$.data.butlerPersona").value("strict"));
+    }
+
+    @Test
+    void updateButlerPartialUpdateShouldOnlyChangeProvidedFields() throws Exception {
+        // First set all three fields to non-default values
+        mockMvc.perform(put("/api/v1/user/butler")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "butlerName", "小蓝",
+                                "butlerAvatarId", 5,
+                                "butlerPersona", "humorous"
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("OK"));
+
+        // Now only update butlerName
+        mockMvc.perform(put("/api/v1/user/butler")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "butlerName", "管家阿福"
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("OK"))
+                .andExpect(jsonPath("$.data.butlerName").value("管家阿福"))
+                .andExpect(jsonPath("$.data.butlerAvatarId").value(5))
+                .andExpect(jsonPath("$.data.butlerPersona").value("humorous"));
+    }
+
+    @Test
+    void updateButlerWithInvalidValuesShouldFail() throws Exception {
+        // butlerName too long (>10 chars)
+        mockMvc.perform(put("/api/v1/user/butler")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "butlerName", "a".repeat(11)
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("INVALID_PARAM"));
+
+        // butlerAvatarId out of range (0)
+        mockMvc.perform(put("/api/v1/user/butler")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "butlerAvatarId", 0
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("INVALID_PARAM"));
+
+        // butlerAvatarId out of range (9)
+        mockMvc.perform(put("/api/v1/user/butler")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "butlerAvatarId", 9
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("INVALID_PARAM"));
+
+        // butlerPersona not in allowed set
+        mockMvc.perform(put("/api/v1/user/butler")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "butlerPersona", "rude"
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("INVALID_PARAM"));
+    }
+
+    @Test
+    void unauthorizedButlerUpdateShouldFail() throws Exception {
+        mockMvc.perform(put("/api/v1/user/butler")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("butlerName", "小蓝"))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
     void refreshShouldRotateRefreshToken() throws Exception {
         String refreshResponse = mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -803,6 +979,36 @@ class ApiFlowTest {
         var recent = userMemoryService.recentForPrompt(userId, 20);
         assertEquals(20, recent.size());
         assertEquals("fact-24", recent.get(0));
+    }
+
+    @Test
+    void addMemoryWithCategoryShouldPersistAndNormalizeInvalidCategory() {
+        String userId = "U13800138000";
+        userMemoryService.add(userId, "用户家里有一只叫旺财的狗", "family");
+        userMemoryService.add(userId, "用户喜欢喝咖啡", "not-a-real-category");
+        userMemoryService.add(userId, "用户经常打车上班", null);
+
+        var memories = userMemoryService.list(userId);
+        assertEquals(3, memories.size());
+
+        var byContent = memories.stream()
+                .collect(java.util.stream.Collectors.toMap(m -> m.content(), m -> m.category()));
+        assertEquals("family", byContent.get("用户家里有一只叫旺财的狗"));
+        assertEquals("other", byContent.get("用户喜欢喝咖啡"));
+        assertEquals("other", byContent.get("用户经常打车上班"));
+    }
+
+    @Test
+    void relevantForPromptShouldFallBackToRecentWhenEmbeddingsUnavailable() {
+        // No Qwen API key is configured in the test profile, so embeddings are always
+        // unavailable and relevantForPrompt must degrade to recency-based ordering.
+        String userId = "U13800138000";
+        for (int i = 0; i < 25; i++) {
+            userMemoryService.add(userId, "fact-" + i);
+        }
+        var relevant = userMemoryService.relevantForPrompt(userId, "随便问点什么", 20);
+        assertEquals(20, relevant.size());
+        assertEquals("fact-24", relevant.get(0));
     }
 
     @Test

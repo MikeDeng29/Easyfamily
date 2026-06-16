@@ -54,6 +54,33 @@ enum APIService {
         return result
     }
 
+    // MARK: - User Profile
+
+    static func getUserProfile(token: String) async throws -> UserProfile {
+        guard let result: UserProfile = try await client.request("/api/v1/user/profile", method: "GET", token: token) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
+    static func updateNickname(token: String, nickname: String) async throws -> UserProfile {
+        guard let result: UserProfile = try await client.request(
+            "/api/v1/user/profile", method: "PUT", token: token, body: UpdateNicknameRequest(nickname: nickname)
+        ) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
+    static func updateButler(token: String, request: UpdateButlerRequest) async throws -> UserProfile {
+        guard let result: UserProfile = try await client.request(
+            "/api/v1/user/butler", method: "PUT", token: token, body: request
+        ) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
     // MARK: - Phones
 
     static func listMyPhones(token: String) async throws -> [PhoneItem] {
