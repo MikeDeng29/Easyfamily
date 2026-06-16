@@ -11,17 +11,12 @@
 #   DEPLOY_SRC_DIR=/opt/easyfamily/src/Easyfamily
 #   DEPLOY_APP_DIR=/opt/easyfamily/app
 #   DEPLOY_SERVICE=easyfamily-backend
-#   DEPLOY_HEALTH_URL=http://127.0.0.1:8080/actuator/health
-#   GIT_PULL_RETRIES=20      # see note below
-#   GIT_PULL_RETRY_DELAY=15  # seconds between retries
+#   GIT_PULL_RETRIES=3
+#   GIT_PULL_RETRY_DELAY=5
 #
-# Note on GitHub connectivity: this server's route to github.com is
-# intermittently blocked/reset (GnuTLS recv error / connect timeout to
-# port 443), independent of git/repo state. This is NOT a sign that the
-# deploy is broken — it can take several minutes of retries before a
-# `git pull` succeeds. The loop below retries with a short delay rather
-# than failing fast; if it exhausts all retries, just rerun the script
-# (no cleanup needed, nothing destructive has happened yet at that point).
+# Git transport: the server pulls via SSH (git@github.com:MikeDeng29/Easyfamily.git).
+# A read-only Deploy Key titled "Production Server" is registered on the repo.
+# Port 443/HTTPS is not used — SSH over port 22 is sufficient and reliable.
 set -euo pipefail
 
 BRANCH="${1:-main}"
@@ -32,9 +27,8 @@ DEPLOY_USER="${DEPLOY_USER:-root}"
 DEPLOY_SRC_DIR="${DEPLOY_SRC_DIR:-/opt/easyfamily/src/Easyfamily}"
 DEPLOY_APP_DIR="${DEPLOY_APP_DIR:-/opt/easyfamily/app}"
 DEPLOY_SERVICE="${DEPLOY_SERVICE:-easyfamily-backend}"
-DEPLOY_HEALTH_URL="${DEPLOY_HEALTH_URL:-http://127.0.0.1:8080/actuator/health}"
-GIT_PULL_RETRIES="${GIT_PULL_RETRIES:-20}"
-GIT_PULL_RETRY_DELAY="${GIT_PULL_RETRY_DELAY:-15}"
+GIT_PULL_RETRIES="${GIT_PULL_RETRIES:-3}"
+GIT_PULL_RETRY_DELAY="${GIT_PULL_RETRY_DELAY:-5}"
 
 SSH="ssh -p ${DEPLOY_PORT} ${DEPLOY_USER}@${DEPLOY_HOST}"
 
@@ -43,16 +37,16 @@ step() {
   echo "==> $1"
 }
 
-step "Pulling ${BRANCH} on ${DEPLOY_HOST} (retrying on GitHub connectivity errors)"
+step "Pulling ${BRANCH} on ${DEPLOY_HOST}"
 for attempt in $(seq 1 "${GIT_PULL_RETRIES}"); do
   if $SSH "cd '${DEPLOY_SRC_DIR}' && git fetch origin && git checkout '${BRANCH}' && git pull origin '${BRANCH}'"; then
     break
   fi
   if [ "${attempt}" -eq "${GIT_PULL_RETRIES}" ]; then
-    echo "git pull failed after ${GIT_PULL_RETRIES} attempts — GitHub may be unreachable from ${DEPLOY_HOST}. Rerun this script later."
+    echo "git pull failed after ${GIT_PULL_RETRIES} attempts. Rerun this script to retry."
     exit 1
   fi
-  echo "git pull failed (attempt ${attempt}/${GIT_PULL_RETRIES}), likely transient GitHub connectivity — retrying in ${GIT_PULL_RETRY_DELAY}s..."
+  echo "git pull failed (attempt ${attempt}/${GIT_PULL_RETRIES}), retrying in ${GIT_PULL_RETRY_DELAY}s..."
   sleep "${GIT_PULL_RETRY_DELAY}"
 done
 
