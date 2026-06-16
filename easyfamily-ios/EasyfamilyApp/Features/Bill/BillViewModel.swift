@@ -9,7 +9,6 @@ final class BillViewModel: ObservableObject {
     @Published var loading: Bool = false
     @Published var error: String?
 
-    // Keep last-used token so deleteBill can trigger a full reload
     private var lastToken: String?
 
     func load(token: String, month: String? = nil) {
@@ -36,7 +35,7 @@ final class BillViewModel: ObservableObject {
     func deleteBill(token: String, id: Int64) async {
         do {
             try await APIService.deleteBill(token: token, id: id)
-            load(token: token)
+            if let t = lastToken { load(token: t) }
         } catch {
             self.error = "删除失败：\(error.localizedDescription)"
         }
@@ -45,9 +44,6 @@ final class BillViewModel: ObservableObject {
 
 enum BillCategoryIcon {
     static func sfSymbol(for category: String, direction: String) -> String {
-        if direction == "income" {
-            return "arrow.down.circle.fill"
-        }
-        return "arrow.up.circle.fill"
+        direction == "income" ? "arrow.down.circle.fill" : "arrow.up.circle.fill"
     }
 }

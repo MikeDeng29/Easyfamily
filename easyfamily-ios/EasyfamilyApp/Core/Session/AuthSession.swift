@@ -30,14 +30,11 @@ final class AuthSession: ObservableObject {
         tokenStore.clear()
     }
 
-    /// Attempts to get a new access token using the stored refresh token.
-    /// Returns true and updates `accessToken` on success; calls `logout()` on failure.
+    /// Refreshes the access token using the stored refresh token.
+    /// Returns the new access token on success; calls logout() and returns nil on failure.
     @discardableResult
-    func refreshAccessToken() async -> Bool {
-        guard let rt = refreshToken else {
-            logout()
-            return false
-        }
+    func refreshAccessToken() async -> String? {
+        guard let rt = refreshToken else { logout(); return nil }
         do {
             let result = try await APIService.refreshToken(refreshToken: rt)
             accessToken = result.accessToken
@@ -46,10 +43,10 @@ final class AuthSession: ObservableObject {
                 tokenStore.saveRefreshToken(newRt)
             }
             tokenStore.save(result.accessToken)
-            return true
+            return result.accessToken
         } catch {
             logout()
-            return false
+            return nil
         }
     }
 }

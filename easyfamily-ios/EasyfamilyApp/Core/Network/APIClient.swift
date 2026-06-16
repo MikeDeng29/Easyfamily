@@ -1,15 +1,19 @@
 import Foundation
 
 /// Thin URLSession-based JSON client matching the backend's `{ code, message, data }` envelope.
+/// Inject `authSession` at app startup so 401 responses are transparently retried after a
+/// token refresh — callers never need to handle 401 themselves.
 final class APIClient {
     static let shared = APIClient()
 
-    private let session: URLSession
+    weak var authSession: AuthSession?
+
+    private let urlSession: URLSession
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
 
-    init(session: URLSession = .shared) {
-        self.session = session
+    init(urlSession: URLSession = .shared) {
+        self.urlSession = urlSession
     }
 
     private func makeRequest(path: String, method: String, token: String?, query: [String: String]?) throws -> URLRequest {
@@ -29,7 +33,6 @@ final class APIClient {
         return request
     }
 
-    /// Request with a JSON-encodable body.
     func request<T: Decodable, B: Encodable>(
         _ path: String,
         method: String = "POST",
@@ -42,7 +45,6 @@ final class APIClient {
         return try await send(request)
     }
 
-    /// Request without a body (GET / DELETE / empty POST).
     func request<T: Decodable>(
         _ path: String,
         method: String = "GET",
@@ -54,12 +56,34 @@ final class APIClient {
     }
 
     private func send<T: Decodable>(_ request: URLRequest) async throws -> T? {
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await urlSession.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw ApiError(message: "no HTTP response")
         }
-        guard (200..<300).contains(http.statusCode) else {
-            throw ApiError(message: "HTTP \(http.statusCode)")
+        // On 401: refresh the token once and retry transparently.
+        if http.statusCode == 401, let auth = authSession {
+            guard let newToken = await auth.refreshAccessToken() else {
+                throw ApiError(message: "HTTP 401")
+            }
+            var retry = request
+            retry.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
+            return try await execute(retry)
+        }
+        return try decode(data, statusCode: http.statusCode)
+    }
+
+    // Executes a request with no retry logic (used for the post-refresh attempt).
+    private func execute<T: Decodable>(_ request: URLRequest) async throws -> T? {
+        let (data, response) = try await urlSession.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw ApiError(message: "no HTTP response")
+        }
+        return try decode(data, statusCode: http.statusCode)
+    }
+
+    private func decode<T: Decodable>(_ data: Data, statusCode: Int) throws -> T? {
+        guard (200..<300).contains(statusCode) else {
+            throw ApiError(message: "HTTP \(statusCode)")
         }
         let envelope = try decoder.decode(ApiResponse<T>.self, from: data)
         guard envelope.code == "OK" else {

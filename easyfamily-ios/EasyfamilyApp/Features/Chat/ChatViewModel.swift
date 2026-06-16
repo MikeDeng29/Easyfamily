@@ -163,22 +163,20 @@ final class ChatViewModel: ObservableObject {
                     appendToLastMessage(chunk)
                 }
             } catch let err as ApiError {
-                if err.message.contains("401"), let s = session {
-                    // Access token expired — refresh and retry once
-                    if await s.refreshAccessToken(), let newToken = s.accessToken {
-                        activeToken = newToken
-                        if messages.last?.role == "ai" { messages.removeLast() }
-                        messages.append(ChatMessage(role: "ai", content: "", isStreaming: true))
-                        do {
-                            for try await chunk in ChatStreamClient.stream(message: text, token: activeToken) {
-                                appendToLastMessage(chunk)
-                            }
-                        } catch {
-                            appendToLastMessage("\n[出错了：\(error.localizedDescription)]")
+                if err.message.contains("401"), let s = session,
+                   let newToken = await s.refreshAccessToken() {
+                    activeToken = newToken
+                    if messages.last?.role == "ai" { messages.removeLast() }
+                    messages.append(ChatMessage(role: "ai", content: "", isStreaming: true))
+                    do {
+                        for try await chunk in ChatStreamClient.stream(message: text, token: activeToken) {
+                            appendToLastMessage(chunk)
                         }
-                    } else {
-                        appendToLastMessage("\n[登录已过期，请重新登录]")
+                    } catch {
+                        appendToLastMessage("\n[出错了：\(error.localizedDescription)]")
                     }
+                } else if err.message.contains("401") {
+                    appendToLastMessage("\n[登录已过期，请重新登录]")
                 } else {
                     appendToLastMessage("\n[出错了：\(err.localizedDescription)]")
                 }

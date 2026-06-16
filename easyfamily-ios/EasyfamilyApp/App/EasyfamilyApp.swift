@@ -9,6 +9,7 @@ struct EasyfamilyApp: App {
             RootView()
                 .environmentObject(session)
                 .preferredColorScheme(.light)
+                .task { APIClient.shared.authSession = session }
         }
     }
 }
