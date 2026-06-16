@@ -8,6 +8,7 @@ struct EasyfamilyApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(session)
+                .preferredColorScheme(.light)
         }
     }
 }
