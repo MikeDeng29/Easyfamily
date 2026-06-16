@@ -121,7 +121,7 @@ public class ChatController {
             try {
                 String reply = llmProvider.chat(systemPrompt, contextMessage);
                 reply = extractAndStripMemories(reply, currentUser.userId());
-                reply = reply.replaceAll("[\uD800-\uDBFF][\uDC00-\uDFFF]", "");
+                reply = stripUnrenderableChars(reply);
                 emitter.send(SseEmitter.event().name("message").data(reply));
                 emitter.complete();
             } catch (Exception e) {
@@ -203,6 +203,30 @@ public class ChatController {
     }
 
     private record MemorySaveEntry(String content, String category) {}
+
+    /**
+     * Strips characters that iOS cannot render, preventing [?] tofu boxes:
+     * - All SMP code points (U+10000+), which includes most emoji
+     * - U+FFFD replacement character (encoding artifacts)
+     * - Variation selectors U+FE00-U+FE0F (emoji presentation selectors)
+     * - Zero-width / invisible formatting chars
+     */
+    private static String stripUnrenderableChars(String s) {
+        if (s == null) return null;
+        // Keep only BMP code points that are safe to render on iOS:
+        // - exclude SMP (>= U+10000): all modern emoji live here
+        // - exclude U+FFFD: Unicode replacement character (shows as [?])
+        // - exclude U+FE00-U+FE0F: variation selectors (emoji presentation)
+        // - exclude U+200B/200C/200D/FEFF: zero-width / BOM chars
+        return s.codePoints()
+                .filter(cp -> cp < 0x10000
+                        && cp != 0xFFFD
+                        && !(cp >= 0xFE00 && cp <= 0xFE0F)
+                        && cp != 0x200B && cp != 0x200C && cp != 0x200D
+                        && cp != 0xFEFF)
+                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                .toString();
+    }
 
     /**
      * Removes all {@code <!--MEMORY_SAVE:...-->} markers (including DOTALL bodies) from
