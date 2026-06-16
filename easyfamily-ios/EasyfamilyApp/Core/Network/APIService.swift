@@ -54,6 +54,15 @@ enum APIService {
         return result
     }
 
+    static func refreshToken(refreshToken: String) async throws -> RefreshTokenResponse {
+        guard let result: RefreshTokenResponse = try await client.request(
+            "/api/v1/auth/refresh", method: "POST", body: RefreshTokenRequest(refreshToken: refreshToken)
+        ) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
     // MARK: - User Profile
 
     static func getUserProfile(token: String) async throws -> UserProfile {

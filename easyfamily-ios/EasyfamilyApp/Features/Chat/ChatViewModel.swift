@@ -143,7 +143,7 @@ final class ChatViewModel: ObservableObject {
         }
     }
 
-    func sendMessage(token: String) {
+    func sendMessage(token: String, session: AuthSession? = nil) {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !loading else { return }
 
@@ -153,9 +153,30 @@ final class ChatViewModel: ObservableObject {
         loading = true
 
         Task {
+            var activeToken = token
             do {
-                for try await chunk in ChatStreamClient.stream(message: text, token: token) {
+                for try await chunk in ChatStreamClient.stream(message: text, token: activeToken) {
                     appendToLastMessage(chunk)
+                }
+            } catch let err as ApiError {
+                if err.message.contains("401"), let s = session {
+                    // Access token expired — refresh and retry once
+                    if await s.refreshAccessToken(), let newToken = s.accessToken {
+                        activeToken = newToken
+                        if messages.last?.role == "ai" { messages.removeLast() }
+                        messages.append(ChatMessage(role: "ai", content: "", isStreaming: true))
+                        do {
+                            for try await chunk in ChatStreamClient.stream(message: text, token: activeToken) {
+                                appendToLastMessage(chunk)
+                            }
+                        } catch {
+                            appendToLastMessage("\n[出错了：\(error.localizedDescription)]")
+                        }
+                    } else {
+                        appendToLastMessage("\n[登录已过期，请重新登录]")
+                    }
+                } else {
+                    appendToLastMessage("\n[出错了：\(err.localizedDescription)]")
                 }
             } catch {
                 appendToLastMessage("\n[出错了：\(error.localizedDescription)]")

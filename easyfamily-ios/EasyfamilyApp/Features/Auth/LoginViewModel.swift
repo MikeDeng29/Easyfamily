@@ -75,7 +75,7 @@ final class LoginViewModel: ObservableObject {
             let result = try await APIService.login(phone: phone, smsCode: smsCode)
             info = "登录成功"
             infoIsError = false
-            session.login(userId: result.userId, accessToken: result.accessToken)
+            session.login(userId: result.userId, accessToken: result.accessToken, refreshToken: result.refreshToken)
         } catch {
             info = "登录失败：\(error.localizedDescription)"
             infoIsError = true
@@ -98,7 +98,7 @@ final class LoginViewModel: ObservableObject {
             captchaToken = token
             info = "登录成功"
             infoIsError = false
-            session.login(userId: result.userId, accessToken: result.accessToken)
+            session.login(userId: result.userId, accessToken: result.accessToken, refreshToken: result.refreshToken)
         } catch {
             info = "一键登录失败：\(error.localizedDescription)"
             infoIsError = true

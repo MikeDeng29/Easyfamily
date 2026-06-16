@@ -384,7 +384,7 @@ struct ChatView: View {
 
             Button {
                 if let token = session.accessToken {
-                    viewModel.sendMessage(token: token)
+                    viewModel.sendMessage(token: token, session: session)
                 }
             } label: {
                 if viewModel.loading {

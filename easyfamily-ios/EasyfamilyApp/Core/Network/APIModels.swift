@@ -72,6 +72,15 @@ struct LoginResponse: Decodable {
     let refreshToken: String?
 }
 
+struct RefreshTokenRequest: Encodable {
+    let refreshToken: String
+}
+
+struct RefreshTokenResponse: Decodable {
+    let accessToken: String
+    let refreshToken: String?
+}
+
 // MARK: - User Profile
 
 struct UserProfile: Decodable {
