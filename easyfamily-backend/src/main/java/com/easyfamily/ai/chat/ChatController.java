@@ -2,6 +2,7 @@ package com.easyfamily.ai.chat;
 
 import com.easyfamily.ai.llm.LlmProvider;
 import com.easyfamily.ai.memory.UserMemoryService;
+import com.easyfamily.bill.service.BillService;
 import com.easyfamily.security.AuthContext;
 import com.easyfamily.user.dto.UserProfileDtos.UserProfile;
 import com.easyfamily.user.service.UserProfileService;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +39,7 @@ public class ChatController {
     private final LlmProvider llmProvider;
     private final UserMemoryService userMemoryService;
     private final UserProfileService userProfileService;
+    private final BillService billService;
     private final ObjectMapper objectMapper;
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
@@ -86,10 +89,12 @@ public class ChatController {
             """;
 
     public ChatController(LlmProvider llmProvider, UserMemoryService userMemoryService,
-                           UserProfileService userProfileService, ObjectMapper objectMapper) {
+                           UserProfileService userProfileService, BillService billService,
+                           ObjectMapper objectMapper) {
         this.llmProvider = llmProvider;
         this.userMemoryService = userMemoryService;
         this.userProfileService = userProfileService;
+        this.billService = billService;
         this.objectMapper = objectMapper;
     }
 
@@ -110,6 +115,32 @@ public class ChatController {
             }
             contextBuilder.append("]\n");
         }
+
+        // Inject current-month bill summary so the AI can answer spending queries
+        try {
+            String currentMonth = YearMonth.now().toString(); // yyyy-MM
+            var stats = billService.stats(currentUser.userId(), currentMonth);
+            var recent = billService.list(currentUser.userId(), currentMonth);
+            contextBuilder.append("[本月账单数据 (").append(currentMonth).append(")：\n");
+            contextBuilder.append("  总支出: ").append(stats.totalAmount()).append(" 元，共 ").append(stats.count()).append(" 笔\n");
+            if (!stats.byCategory().isEmpty()) {
+                contextBuilder.append("  分类明细：\n");
+                for (var cat : stats.byCategory()) {
+                    contextBuilder.append("    - ").append(cat.category()).append(": ").append(cat.amount()).append(" 元 (").append(cat.count()).append(" 笔)\n");
+                }
+            }
+            if (!recent.isEmpty()) {
+                contextBuilder.append("  最近账单记录：\n");
+                recent.stream().limit(10).forEach(b -> {
+                    String noteStr = (b.note() != null && !b.note().isBlank()) ? " (" + b.note() + ")" : "";
+                    contextBuilder.append("    - ").append(b.billedAt()).append(" ").append(b.category()).append(" ").append(b.amount()).append(" 元").append(noteStr).append("\n");
+                });
+            }
+            contextBuilder.append("]\n");
+        } catch (Exception e) {
+            log.debug("Could not load bill context for user {}: {}", currentUser.userId(), e.getMessage());
+        }
+
         contextBuilder.append("[用户ID: ").append(currentUser.userId())
                 .append(", 当前手机号: ").append(currentUser.phone()).append("] ")
                 .append(userMessage);
