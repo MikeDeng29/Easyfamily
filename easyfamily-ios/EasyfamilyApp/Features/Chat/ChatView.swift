@@ -72,7 +72,7 @@ struct ChatView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("嗨，\(viewModel.nickname ?? "")👋").font(.headline)
+                    Text("嗨，\(viewModel.nickname ?? "")！").font(.headline)
                     Text("我是\(viewModel.butlerName)，可以帮你查手机号绑定、记账、查配额")
                         .font(.caption)
                         .foregroundColor(AppPalette.textSecondary)
