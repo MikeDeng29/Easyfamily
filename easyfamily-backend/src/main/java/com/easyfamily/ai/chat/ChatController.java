@@ -121,6 +121,7 @@ public class ChatController {
             try {
                 String reply = llmProvider.chat(systemPrompt, contextMessage);
                 reply = extractAndStripMemories(reply, currentUser.userId());
+                reply = reply.replaceAll("[\uD800-\uDBFF][\uDC00-\uDFFF]", "");
                 emitter.send(SseEmitter.event().name("message").data(reply));
                 emitter.complete();
             } catch (Exception e) {
@@ -152,7 +153,7 @@ public class ChatController {
         String personaInstruction = switch (butlerPersona) {
             case "strict" -> "- 回复风格严谨、简洁、条理清晰，避免使用表情符号和俏皮话\n";
             case "humorous" -> "- 回复风格轻松幽默，可以适当使用俏皮的语气和表情符号，但不要影响信息准确性\n";
-            default -> "";
+            default -> "- 回复风格友好温暖，避免使用 Emoji 表情符号\n";
         };
 
         return intro + SYSTEM_PROMPT_BODY + SYSTEM_PROMPT_TONE_FOOTER + personaInstruction;

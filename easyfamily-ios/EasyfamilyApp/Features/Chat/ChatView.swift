@@ -21,8 +21,6 @@ struct ChatView: View {
                             if viewModel.messages.isEmpty {
                                 if viewModel.nickname == nil {
                                     nicknameOnboardingView
-                                } else if !viewModel.butlerSetupDone {
-                                    butlerOnboardingView
                                 } else {
                                     welcomeView
                                 }
@@ -81,7 +79,7 @@ struct ChatView: View {
                 Button {
                     viewModel.resetNickname()
                 } label: {
-                    Image(systemName: "pencil.circle")
+                    Image(systemName: "square.and.pencil")
                         .font(.system(size: 18))
                         .foregroundColor(AppPalette.textSecondary)
                 }
@@ -145,7 +143,7 @@ struct ChatView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("AI 智能助手").font(.headline)
-                    Text("先认识一下吧，我该怎么称呼你？")
+                    Text("先认识一下，我该怎么称呼你")
                         .font(.caption)
                         .foregroundColor(AppPalette.textSecondary)
                 }

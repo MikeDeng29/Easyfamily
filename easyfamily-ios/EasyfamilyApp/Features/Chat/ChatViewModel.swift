@@ -58,11 +58,9 @@ final class ChatViewModel: ObservableObject {
     func loadProfile(token: String) async {
         do {
             let profile = try await APIService.getUserProfile(token: token)
-            nickname = profile.nickname
-            if let nickname {
-                profileStore.saveNickname(nickname)
-            } else {
-                profileStore.clearNickname()
+            if let serverNickname = profile.nickname {
+                nickname = serverNickname
+                profileStore.saveNickname(serverNickname)
             }
 
             if let name = profile.butlerName { butlerName = name }
