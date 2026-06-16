@@ -105,8 +105,11 @@ public class ChatController {
         }
 
         contextBuilder.append("[用户ID: ").append(currentUser.userId())
-                .append(", 当前手机号: ").append(currentUser.phone()).append("] ")
-                .append(userMessage);
+                .append(", 当前手机号: ").append(currentUser.phone());
+        if (profile.nickname() != null && !profile.nickname().isBlank()) {
+            contextBuilder.append(", 用户昵称: ").append(profile.nickname());
+        }
+        contextBuilder.append("] ").append(userMessage);
         String contextMessage = contextBuilder.toString();
 
         SseEmitter emitter = new SseEmitter(60_000L);
