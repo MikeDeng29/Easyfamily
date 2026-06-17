@@ -3,6 +3,7 @@ import SwiftUI
 struct MineView: View {
     @EnvironmentObject private var session: AuthSession
     @State private var showLogoutConfirm = false
+    @State private var showFeedback = false
     @State private var phoneCount: Int?
     @State private var familyCount: Int?
 
@@ -22,6 +23,8 @@ struct MineView: View {
         Destination(id: "bill", title: "账单", icon: "yensign.circle.fill", color: AppPalette.violet, background: AppPalette.softViolet)
     ]
 
+    private let feedbackDestination = Destination(id: "feedback", title: "问题反馈", icon: "exclamationmark.bubble.fill", color: AppPalette.coral, background: AppPalette.softCoral)
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -33,9 +36,12 @@ struct MineView: View {
                             NavigationLink(value: destination.id) {
                                 row(for: destination)
                             }
-                            if destination.id != destinations.last?.id {
-                                Divider().padding(.leading, 60)
-                            }
+                            Divider().padding(.leading, 60)
+                        }
+                        Button {
+                            showFeedback = true
+                        } label: {
+                            row(for: feedbackDestination)
                         }
                     }
                     .background(AppPalette.surface)
@@ -55,6 +61,10 @@ struct MineView: View {
             }
             .background(AppPalette.background)
             .navigationTitle("我的")
+            .sheet(isPresented: $showFeedback) {
+                FeedbackView()
+                    .environmentObject(session)
+            }
             .navigationDestination(for: String.self) { id in
                 switch id {
                 case "family": FamilyView()

@@ -5,6 +5,7 @@
         <el-menu mode="horizontal" :default-active="activePath" :ellipsis="false" router>
           <el-menu-item index="/report">报表</el-menu-item>
           <el-menu-item index="/quota">查询限额配置</el-menu-item>
+          <el-menu-item index="/feedback">反馈管理</el-menu-item>
         </el-menu>
         <el-button type="danger" plain @click="logout">退出登录</el-button>
       </div>

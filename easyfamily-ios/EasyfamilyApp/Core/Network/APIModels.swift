@@ -90,6 +90,7 @@ struct UserProfile: Decodable {
     let butlerName: String?
     let butlerAvatarId: Int?
     let butlerPersona: String?
+    let email: String?
 }
 
 struct UpdateNicknameRequest: Encodable {
@@ -273,6 +274,14 @@ struct VehicleStatsDto: Decodable {
     let totalRecords: Int64
     let totalItems: Int64
     let byCategory: [CategoryStatDto]
+}
+
+// MARK: - Feedback
+
+struct FeedbackRequest: Encodable {
+    let title: String?
+    let description: String
+    let email: String?
 }
 
 // MARK: - Chat

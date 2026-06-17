@@ -19,6 +19,18 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
 
 server:
   port: 8080
@@ -70,6 +82,11 @@ easyfamily:
     claude:
       api-key: ${CLAUDE_API_KEY:}
       timeout-ms: 15000
+  github:
+    token: ${GITHUB_TOKEN:}
+    repo: ${GITHUB_REPO:MikeDeng29/Easyfamily}
+  mail:
+    enabled: ${MAIL_ENABLED:false}
   monitor:
     enabled: ${MONITOR_ENABLED:true}
     scan-cron: "0 0 2 * * ?"

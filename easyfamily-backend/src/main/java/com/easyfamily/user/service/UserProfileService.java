@@ -28,8 +28,21 @@ public class UserProfileService {
     public UserProfile getProfile(String userId, String loginPhone) {
         ensureSeeded(userId, loginPhone);
         return jdbcTemplate.queryForObject(
-                "SELECT user_id, phone, nickname, butler_name, butler_avatar_id, butler_persona FROM users WHERE user_id = ?",
+                "SELECT user_id, phone, nickname, email, butler_name, butler_avatar_id, butler_persona FROM users WHERE user_id = ?",
                 (rs, rowNum) -> toUserProfile(rs),
+                userId
+        );
+    }
+
+    /**
+     * Persists an email address for the given user.  Passing {@code null} clears
+     * the stored address.  No validation is performed here — callers are
+     * responsible for validating the format before invoking this method.
+     */
+    public void updateEmail(String userId, String email) {
+        jdbcTemplate.update(
+                "UPDATE users SET email = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?",
+                email,
                 userId
         );
     }
@@ -112,6 +125,7 @@ public class UserProfileService {
                 rs.getString("user_id"),
                 rs.getString("phone"),
                 rs.getString("nickname"),
+                rs.getString("email"),
                 butlerName,
                 butlerAvatarId,
                 butlerPersona

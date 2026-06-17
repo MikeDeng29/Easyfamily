@@ -40,7 +40,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "easyfamily.query.aliyun-market.base-url=https://example.aliyun-market.com",
         "easyfamily.query.aliyun-market.path=/phone/binding/query",
         "easyfamily.query.aliyun-market.app-code=test-appcode",
-        "easyfamily.sms.provider=mock"
+        "easyfamily.sms.provider=mock",
+        "spring.mail.host=localhost",
+        "spring.mail.port=25",
+        "spring.mail.username=test",
+        "spring.mail.password=test",
+        "spring.mail.properties.mail.smtp.auth=false",
+        "spring.mail.properties.mail.smtp.starttls.enable=false",
+        "easyfamily.mail.enabled=false"
 })
 class ApiFlowTest {
 
@@ -117,6 +124,7 @@ class ApiFlowTest {
         jdbcTemplate.update("DELETE FROM user_phones");
         jdbcTemplate.update("DELETE FROM user_memory");
         jdbcTemplate.update("DELETE FROM users");
+        jdbcTemplate.update("DELETE FROM feedback");
     }
 
     @Test

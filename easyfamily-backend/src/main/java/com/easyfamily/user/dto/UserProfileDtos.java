@@ -12,6 +12,7 @@ public final class UserProfileDtos {
             String userId,
             String phone,
             String nickname,
+            String email,
             String butlerName,
             Integer butlerAvatarId,
             String butlerPersona

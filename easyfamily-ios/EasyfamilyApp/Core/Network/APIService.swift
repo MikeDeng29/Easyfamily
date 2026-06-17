@@ -228,4 +228,12 @@ enum APIService {
         }
         return result
     }
+
+    // MARK: - Feedback
+
+    static func submitFeedback(token: String, title: String?, description: String, email: String? = nil) async throws {
+        let _: EmptyValue? = try await client.request(
+            "/api/v1/feedback", method: "POST", token: token, body: FeedbackRequest(title: title, description: description, email: email)
+        )
+    }
 }
