@@ -55,7 +55,7 @@ struct BillListView: View {
                         let amountPrefix = isIncome ? "+" : "-"
 
                         HStack {
-                            Image(systemName: isIncome ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
+                            Image(systemName: isIncome ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
                                 .font(.title2)
                                 .foregroundColor(amountColor)
                             VStack(alignment: .leading) {
