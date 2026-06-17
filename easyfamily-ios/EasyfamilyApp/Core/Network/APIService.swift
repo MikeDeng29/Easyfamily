@@ -141,6 +141,18 @@ enum APIService {
         return result ?? []
     }
 
+    static func addFamilyMember(token: String, name: String, phone: String, relation: String) async throws -> FamilyMemberItem {
+        guard let result: FamilyMemberItem = try await client.request(
+            "/api/v1/family/members", method: "POST", token: token,
+            body: FamilyMemberCreateRequest(name: name, phone: phone, relation: relation)
+        ) else { throw ApiError(message: "empty response") }
+        return result
+    }
+
+    static func deleteFamilyMember(token: String, memberId: String) async throws {
+        let _: EmptyValue? = try await client.request("/api/v1/family/members/\(memberId)", method: "DELETE", token: token)
+    }
+
     // MARK: - Bill
 
     static func listBills(token: String, month: String? = nil) async throws -> [BillItemDto] {

@@ -146,10 +146,18 @@ struct RealNameVerifyResult: Decodable {
 // MARK: - Family
 
 struct FamilyMemberItem: Decodable, Identifiable {
+    let memberId: String
     let name: String
     let phone: String
+    let relation: String
 
-    var id: String { phone }
+    var id: String { memberId }
+}
+
+struct FamilyMemberCreateRequest: Encodable {
+    let name: String
+    let phone: String
+    let relation: String
 }
 
 // MARK: - Bill

@@ -22,7 +22,6 @@ struct MineView: View {
         var list: [Destination] = [
             Destination(id: "family", title: "大家庭", icon: "house.fill", color: AppPalette.coral, background: AppPalette.softCoral),
             Destination(id: "phone", title: "手机号", icon: "phone.fill", color: AppPalette.violet, background: AppPalette.softViolet),
-            Destination(id: "query", title: "查询", icon: "magnifyingglass", color: AppPalette.coral, background: AppPalette.softCoral),
             Destination(id: "vehicle", title: "车辆", icon: "car.fill", color: AppPalette.amber, background: AppPalette.softAmber),
             Destination(id: "bill", title: "账单", icon: "yensign.circle.fill", color: AppPalette.violet, background: AppPalette.softViolet),
         ]

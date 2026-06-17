@@ -28,11 +28,7 @@ struct LiabilityListView: View {
                 if viewModel.isLoading {
                     ProgressView().frame(maxWidth: .infinity).padding(.top, 20)
                 } else if viewModel.liabilities.isEmpty {
-                    Text("暂无负债，点击右上角 + 添加")
-                        .font(.subheadline)
-                        .foregroundColor(AppPalette.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 40)
+                    emptyStateView
                 } else {
                     LazyVStack(spacing: 0) {
                         ForEach(viewModel.liabilities) { liability in
@@ -74,6 +70,41 @@ struct LiabilityListView: View {
                 await viewModel.load(token: token)
             }
         }
+    }
+
+    // MARK: - Empty state
+
+    private var emptyStateView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "creditcard")
+                .font(.system(size: 48))
+                .foregroundColor(softRed.opacity(0.8))
+                .padding(.top, 40)
+
+            Text("记录家庭负债")
+                .font(.headline)
+                .foregroundColor(AppPalette.textPrimary)
+
+            Text("录入房贷、车贷、信用卡等负债，\n结合资产一起计算净资产和健康评分")
+                .font(.subheadline)
+                .foregroundColor(AppPalette.textSecondary)
+                .multilineTextAlignment(.center)
+
+            Button {
+                showAddForm = true
+            } label: {
+                Label("添加第一条负债", systemImage: "plus")
+                    .font(.subheadline.bold())
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(red)
+                    .cornerRadius(24)
+            }
+            .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 32)
     }
 
     // MARK: - Summary card

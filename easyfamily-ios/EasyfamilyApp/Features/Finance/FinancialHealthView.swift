@@ -98,11 +98,28 @@ struct FinancialHealthView: View {
                 .padding(.top, 60)
                 .padding(.horizontal, 32)
             } else {
-                Text("暂无财务健康数据")
-                    .font(.subheadline)
-                    .foregroundColor(AppPalette.textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 60)
+                VStack(spacing: 20) {
+                    Image(systemName: "chart.pie")
+                        .font(.system(size: 52))
+                        .foregroundColor(AppPalette.textSecondary.opacity(0.3))
+                        .padding(.top, 60)
+
+                    Text("财务健康评分待激活")
+                        .font(.headline)
+                        .foregroundColor(AppPalette.textPrimary)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        activationStep(number: "1", text: "在「账单」中记录本月收支")
+                        activationStep(number: "2", text: "在「家庭资产」中录入房产、存款等")
+                        activationStep(number: "3", text: "在「家庭负债」中填写房贷、车贷等")
+                    }
+                    .padding(.horizontal, 32)
+
+                    Text("三项数据录入后，评分自动激活")
+                        .font(.caption)
+                        .foregroundColor(AppPalette.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
             }
         }
         .background(AppPalette.background)
@@ -326,6 +343,20 @@ struct FinancialHealthView: View {
     }
 
     // MARK: - Helpers
+
+    private func activationStep(number: String, text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(number)
+                .font(.caption.bold())
+                .foregroundColor(.white)
+                .frame(width: 20, height: 20)
+                .background(AppPalette.violet)
+                .clipShape(Circle())
+            Text(text)
+                .font(.subheadline)
+                .foregroundColor(AppPalette.textPrimary)
+        }
+    }
 
     private func loadData() async {
         guard let token = session.accessToken else { return }

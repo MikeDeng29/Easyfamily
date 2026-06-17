@@ -29,11 +29,7 @@ struct AssetListView: View {
                 if viewModel.isLoading {
                     ProgressView().frame(maxWidth: .infinity).padding(.top, 20)
                 } else if viewModel.assets.isEmpty {
-                    Text("暂无资产，点击右上角 + 添加")
-                        .font(.subheadline)
-                        .foregroundColor(AppPalette.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 40)
+                    emptyStateView
                 } else {
                     LazyVStack(spacing: 0) {
                         ForEach(viewModel.assets) { asset in
@@ -75,6 +71,41 @@ struct AssetListView: View {
                 await viewModel.load(token: token)
             }
         }
+    }
+
+    // MARK: - Empty state
+
+    private var emptyStateView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "building.columns")
+                .font(.system(size: 48))
+                .foregroundColor(softGreen.opacity(0.6))
+                .padding(.top, 40)
+
+            Text("开始记录家庭资产")
+                .font(.headline)
+                .foregroundColor(AppPalette.textPrimary)
+
+            Text("录入房产、存款、基金、车辆价值等，\n帮助计算净资产和财务健康评分")
+                .font(.subheadline)
+                .foregroundColor(AppPalette.textSecondary)
+                .multilineTextAlignment(.center)
+
+            Button {
+                showAddForm = true
+            } label: {
+                Label("添加第一条资产", systemImage: "plus")
+                    .font(.subheadline.bold())
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(green)
+                    .cornerRadius(24)
+            }
+            .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 32)
     }
 
     // MARK: - Summary card
