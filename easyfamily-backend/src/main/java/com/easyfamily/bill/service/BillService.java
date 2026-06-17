@@ -4,6 +4,8 @@ import com.easyfamily.bill.dto.BillDtos.BillItem;
 import com.easyfamily.bill.dto.BillDtos.BillStatsDto;
 import com.easyfamily.bill.dto.BillDtos.CategoryStat;
 import com.easyfamily.bill.dto.BillDtos.CreateBillRequest;
+import com.easyfamily.bill.dto.BillDtos.FamilyBillStats;
+import com.easyfamily.bill.dto.BillDtos.MemberStats;
 import com.easyfamily.bill.dto.BillDtos.MonthlyTrendItem;
 import com.easyfamily.bill.dto.BillDtos.SecurityReportDto;
 import com.easyfamily.common.exception.BusinessException;
@@ -320,6 +322,94 @@ public class BillService {
                 score,
                 healthLevel
         );
+    }
+
+    public FamilyBillStats familyStats(String userId, String month) {
+        // 1. Get current user's own stats
+        BillStatsDto selfStats = stats(userId, month);
+        String selfName = jdbcTemplate.query(
+                "SELECT nickname FROM users WHERE user_id = ?",
+                (rs, rowNum) -> rs.getString("nickname"),
+                userId
+        ).stream().findFirst().orElse("户主");
+        if (selfName == null || selfName.isBlank()) {
+            selfName = "户主";
+        }
+
+        MemberStats selfMember = new MemberStats(
+                "self",
+                selfName,
+                "本人",
+                selfStats.totalIncome(),
+                selfStats.totalExpense(),
+                selfStats.netSavings()
+        );
+
+        List<MemberStats> allMembers = new ArrayList<>();
+        allMembers.add(selfMember);
+
+        // 2. Get family member phones
+        List<Map<String, Object>> memberRows = jdbcTemplate.queryForList(
+                "SELECT member_id, member_name, member_phone, relation_to_user" +
+                " FROM family_members WHERE user_id = ?",
+                userId
+        );
+
+        if (!memberRows.isEmpty()) {
+            List<String> phones = memberRows.stream()
+                    .map(r -> (String) r.get("member_phone"))
+                    .toList();
+
+            // Build IN clause placeholders
+            String placeholders = phones.stream().map(p -> "?").collect(java.util.stream.Collectors.joining(","));
+            List<Map<String, Object>> userRows = jdbcTemplate.queryForList(
+                    "SELECT user_id, phone FROM users WHERE phone IN (" + placeholders + ")",
+                    phones.toArray()
+            );
+
+            // Map phone -> userId
+            Map<String, String> phoneToUserId = new java.util.HashMap<>();
+            for (Map<String, Object> row : userRows) {
+                phoneToUserId.put((String) row.get("phone"), (String) row.get("user_id"));
+            }
+
+            // 3. Get stats for each member who has an account
+            for (Map<String, Object> memberRow : memberRows) {
+                String memberId = (String) memberRow.get("member_id");
+                String memberName = (String) memberRow.get("member_name");
+                String memberPhone = (String) memberRow.get("member_phone");
+                String relation = (String) memberRow.get("relation_to_user");
+                String memberUserId = phoneToUserId.get(memberPhone);
+
+                if (memberUserId != null) {
+                    BillStatsDto memberStats = stats(memberUserId, month);
+                    allMembers.add(new MemberStats(
+                            memberId, memberName, relation,
+                            memberStats.totalIncome(), memberStats.totalExpense(), memberStats.netSavings()
+                    ));
+                } else {
+                    // Member has no account: contribute zero stats
+                    allMembers.add(new MemberStats(
+                            memberId, memberName, relation,
+                            BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO
+                    ));
+                }
+            }
+        }
+
+        // 4. Aggregate totals
+        BigDecimal totalIncome = allMembers.stream()
+                .map(MemberStats::income)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalExpense = allMembers.stream()
+                .map(MemberStats::expense)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal netSavings = totalIncome.subtract(totalExpense);
+        BigDecimal savingsRate = totalIncome.compareTo(BigDecimal.ZERO) > 0
+                ? netSavings.divide(totalIncome, 4, RoundingMode.HALF_UP)
+                : null;
+
+        return new FamilyBillStats(allMembers, totalIncome, totalExpense, netSavings, savingsRate);
     }
 
     private LocalDate parseDate(String dateStr) {

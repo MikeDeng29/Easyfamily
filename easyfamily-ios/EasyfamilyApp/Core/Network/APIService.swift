@@ -236,4 +236,82 @@ enum APIService {
             "/api/v1/feedback", method: "POST", token: token, body: FeedbackRequest(title: title, description: description, email: email)
         )
     }
+
+    // MARK: - Asset
+
+    static func listAssets(token: String) async throws -> AssetListResponse {
+        guard let result: AssetListResponse = try await client.request("/api/v1/asset", method: "GET", token: token) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
+    static func createAsset(token: String, req: AssetCreateRequest) async throws -> AssetItem {
+        guard let result: AssetItem = try await client.request("/api/v1/asset", method: "POST", token: token, body: req) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
+    static func updateAsset(token: String, id: Int, req: AssetCreateRequest) async throws -> AssetItem {
+        guard let result: AssetItem = try await client.request("/api/v1/asset/\(id)", method: "PUT", token: token, body: req) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
+    static func deleteAsset(token: String, id: Int) async throws {
+        let _: EmptyValue? = try await client.request("/api/v1/asset/\(id)", method: "DELETE", token: token)
+    }
+
+    // MARK: - Liability
+
+    static func listLiabilities(token: String) async throws -> LiabilityListResponse {
+        guard let result: LiabilityListResponse = try await client.request("/api/v1/liability", method: "GET", token: token) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
+    static func createLiability(token: String, req: LiabilityCreateRequest) async throws -> LiabilityItem {
+        guard let result: LiabilityItem = try await client.request("/api/v1/liability", method: "POST", token: token, body: req) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
+    static func updateLiability(token: String, id: Int, req: LiabilityCreateRequest) async throws -> LiabilityItem {
+        guard let result: LiabilityItem = try await client.request("/api/v1/liability/\(id)", method: "PUT", token: token, body: req) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
+    static func deleteLiability(token: String, id: Int) async throws {
+        let _: EmptyValue? = try await client.request("/api/v1/liability/\(id)", method: "DELETE", token: token)
+    }
+
+    // MARK: - Finance
+
+    static func getFinancialHealthReport(token: String, month: String?) async throws -> FinancialHealthReport {
+        var query: [String: String]? = nil
+        if let month { query = ["month": month] }
+        guard let result: FinancialHealthReport = try await client.request(
+            "/api/v1/finance/health-report", method: "GET", token: token, query: query
+        ) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
+    static func getFamilyBillStats(token: String, month: String?) async throws -> FamilyBillStats {
+        var query: [String: String]? = nil
+        if let month { query = ["month": month] }
+        guard let result: FamilyBillStats = try await client.request(
+            "/api/v1/bill/family-stats", method: "GET", token: token, query: query
+        ) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
 }

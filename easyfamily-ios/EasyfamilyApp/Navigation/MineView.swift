@@ -20,7 +20,10 @@ struct MineView: View {
         Destination(id: "phone", title: "手机号", icon: "phone.fill", color: AppPalette.violet, background: AppPalette.softViolet),
         Destination(id: "query", title: "查询", icon: "magnifyingglass", color: AppPalette.coral, background: AppPalette.softCoral),
         Destination(id: "vehicle", title: "车辆", icon: "car.fill", color: AppPalette.amber, background: AppPalette.softAmber),
-        Destination(id: "bill", title: "账单", icon: "yensign.circle.fill", color: AppPalette.violet, background: AppPalette.softViolet)
+        Destination(id: "bill", title: "账单", icon: "yensign.circle.fill", color: AppPalette.violet, background: AppPalette.softViolet),
+        Destination(id: "finance", title: "财务健康", icon: "chart.xyaxis.line", color: AppPalette.violet, background: AppPalette.softViolet),
+        Destination(id: "assets", title: "家庭资产", icon: "chart.pie.fill", color: Color(hex: 0x2E7D32), background: Color(hex: 0xE8F5E9)),
+        Destination(id: "liabilities", title: "家庭负债", icon: "creditcard.fill", color: AppPalette.coral, background: AppPalette.softCoral)
     ]
 
     private let feedbackDestination = Destination(id: "feedback", title: "问题反馈", icon: "exclamationmark.bubble.fill", color: AppPalette.coral, background: AppPalette.softCoral)
@@ -72,6 +75,9 @@ struct MineView: View {
                 case "query": QueryView()
                 case "vehicle": VehicleListView()
                 case "bill": BillListView()
+                case "finance": FinancialHealthView()
+                case "assets": AssetListView()
+                case "liabilities": LiabilityListView()
                 default: EmptyView()
                 }
             }

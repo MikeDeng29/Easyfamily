@@ -73,4 +73,21 @@ public final class BillDtos {
             int healthScore,
             String healthLevel
     ) {}
+
+    public record MemberStats(
+            String memberId,
+            String memberName,
+            String relation,
+            BigDecimal income,
+            BigDecimal expense,
+            BigDecimal netSavings
+    ) {}
+
+    public record FamilyBillStats(
+            List<MemberStats> members,
+            BigDecimal totalIncome,
+            BigDecimal totalExpense,
+            BigDecimal netSavings,
+            BigDecimal savingsRate
+    ) {}
 }

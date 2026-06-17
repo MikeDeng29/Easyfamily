@@ -2,7 +2,9 @@ package com.easyfamily.ai.chat;
 
 import com.easyfamily.ai.llm.LlmProvider;
 import com.easyfamily.ai.memory.UserMemoryService;
+import com.easyfamily.asset.service.AssetService;
 import com.easyfamily.bill.service.BillService;
+import com.easyfamily.liability.service.LiabilityService;
 import com.easyfamily.security.AuthContext;
 import com.easyfamily.user.dto.UserProfileDtos.UserProfile;
 import com.easyfamily.user.service.UserProfileService;
@@ -40,17 +42,22 @@ public class ChatController {
     private final UserMemoryService userMemoryService;
     private final UserProfileService userProfileService;
     private final BillService billService;
+    private final AssetService assetService;
+    private final LiabilityService liabilityService;
     private final PromptProperties prompts;
     private final ObjectMapper objectMapper;
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
     public ChatController(LlmProvider llmProvider, UserMemoryService userMemoryService,
                            UserProfileService userProfileService, BillService billService,
+                           AssetService assetService, LiabilityService liabilityService,
                            PromptProperties prompts, ObjectMapper objectMapper) {
         this.llmProvider = llmProvider;
         this.userMemoryService = userMemoryService;
         this.userProfileService = userProfileService;
         this.billService = billService;
+        this.assetService = assetService;
+        this.liabilityService = liabilityService;
         this.prompts = prompts;
         this.objectMapper = objectMapper;
     }
@@ -102,6 +109,25 @@ public class ChatController {
             contextBuilder.append("]\n");
         } catch (Exception e) {
             log.debug("Could not load bill context for user {}: {}", currentUser.userId(), e.getMessage());
+        }
+
+        // Inject asset/liability summary
+        try {
+            var assets = assetService.list(currentUser.userId());
+            var liabilities = liabilityService.list(currentUser.userId());
+            if (!assets.items().isEmpty() || !liabilities.items().isEmpty()) {
+                contextBuilder.append("[家庭财务资产负债摘要：\n");
+                contextBuilder.append("  总资产: ").append(assets.totalValue()).append(" 元");
+                contextBuilder.append("，总负债: ").append(liabilities.totalBalance()).append(" 元");
+                contextBuilder.append("，净资产: ")
+                        .append(assets.totalValue().subtract(liabilities.totalBalance())).append(" 元\n");
+                if (!liabilities.items().isEmpty()) {
+                    contextBuilder.append("  月还款: ").append(liabilities.totalMonthlyPayment()).append(" 元\n");
+                }
+                contextBuilder.append("]\n");
+            }
+        } catch (Exception e) {
+            log.debug("Could not load asset/liability context: {}", e.getMessage());
         }
 
         contextBuilder.append("[用户ID: ").append(currentUser.userId())

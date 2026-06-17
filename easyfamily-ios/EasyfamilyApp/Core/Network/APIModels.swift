@@ -297,3 +297,92 @@ struct BillActionData: Decodable {
     let note: String?
     let date: String
 }
+
+// MARK: - Asset
+
+struct AssetItem: Codable, Identifiable {
+    let id: Int
+    let name: String
+    let assetType: String
+    let value: Decimal
+    let note: String?
+    let createdAt: String
+}
+
+struct AssetListResponse: Codable {
+    let items: [AssetItem]
+    let totalValue: Decimal
+}
+
+struct AssetCreateRequest: Encodable {
+    let name: String
+    let assetType: String
+    let value: Decimal
+    let note: String?
+}
+
+// MARK: - Liability
+
+struct LiabilityItem: Codable, Identifiable {
+    let id: Int
+    let name: String
+    let liabilityType: String
+    let balance: Decimal
+    let monthlyPayment: Decimal?
+    let interestRate: Decimal?
+    let note: String?
+    let createdAt: String
+}
+
+struct LiabilityListResponse: Codable {
+    let items: [LiabilityItem]
+    let totalBalance: Decimal
+    let totalMonthlyPayment: Decimal
+}
+
+struct LiabilityCreateRequest: Encodable {
+    let name: String
+    let liabilityType: String
+    let balance: Decimal
+    let monthlyPayment: Decimal?
+    let interestRate: Decimal?
+    let note: String?
+}
+
+// MARK: - Family Finance
+
+struct FinancialHealthReport: Codable {
+    let monthlyIncome: Decimal
+    let monthlyExpense: Decimal
+    let netSavings: Decimal
+    let savingsRate: Decimal?
+    let totalAssets: Decimal
+    let liquidAssets: Decimal
+    let assetBreakdown: [AssetItem]
+    let totalLiabilities: Decimal
+    let totalMonthlyPayment: Decimal
+    let debtToIncomeRatio: Double
+    let liabilityBreakdown: [LiabilityItem]
+    let netWorth: Decimal
+    let emergencyFundMonths: Double
+    let healthScore: Int
+    let healthLevel: String
+    let suggestions: [String]
+}
+
+struct FamilyBillStats: Codable {
+    let members: [MemberStats]
+    let totalIncome: Decimal
+    let totalExpense: Decimal
+    let netSavings: Decimal
+    let savingsRate: Decimal?
+}
+
+struct MemberStats: Codable {
+    let memberId: String
+    let memberName: String
+    let relation: String
+    let income: Decimal
+    let expense: Decimal
+    let netSavings: Decimal
+}

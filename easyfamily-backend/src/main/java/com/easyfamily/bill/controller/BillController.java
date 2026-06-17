@@ -3,6 +3,7 @@ package com.easyfamily.bill.controller;
 import com.easyfamily.bill.dto.BillDtos.BillItem;
 import com.easyfamily.bill.dto.BillDtos.BillStatsDto;
 import com.easyfamily.bill.dto.BillDtos.CreateBillRequest;
+import com.easyfamily.bill.dto.BillDtos.FamilyBillStats;
 import com.easyfamily.bill.dto.BillDtos.MonthlyTrendItem;
 import com.easyfamily.bill.dto.BillDtos.SecurityReportDto;
 import com.easyfamily.bill.service.BillService;
@@ -77,5 +78,11 @@ public class BillController {
     public ApiResponse<SecurityReportDto> securityReport() {
         var user = AuthContext.currentUser();
         return ApiResponse.ok(billService.getSecurityReport(user.userId()));
+    }
+
+    @GetMapping("/family-stats")
+    public ApiResponse<FamilyBillStats> familyStats(@RequestParam(required = false) String month) {
+        var user = AuthContext.currentUser();
+        return ApiResponse.ok(billService.familyStats(user.userId(), month));
     }
 }

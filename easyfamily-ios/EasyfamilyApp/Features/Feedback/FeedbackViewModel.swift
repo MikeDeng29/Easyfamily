@@ -8,7 +8,7 @@ final class FeedbackViewModel {
     var isSubmitting: Bool = false
     var submitResult: SubmitResult? = nil
 
-    enum SubmitResult {
+    enum SubmitResult: Equatable {
         case success
         case failure(String)
     }

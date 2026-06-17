@@ -121,6 +121,8 @@ class ApiFlowTest {
         jdbcTemplate.update("DELETE FROM card_monitor_snapshot");
         jdbcTemplate.update("DELETE FROM device_push_token");
         jdbcTemplate.update("DELETE FROM family_members");
+        jdbcTemplate.update("DELETE FROM family_asset");
+        jdbcTemplate.update("DELETE FROM family_liability");
         jdbcTemplate.update("DELETE FROM user_phones");
         jdbcTemplate.update("DELETE FROM user_memory");
         jdbcTemplate.update("DELETE FROM users");
