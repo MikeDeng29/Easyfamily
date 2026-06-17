@@ -3,6 +3,7 @@ package com.easyfamily.user.controller;
 import com.easyfamily.common.api.ApiResponse;
 import com.easyfamily.security.AuthContext;
 import com.easyfamily.user.dto.UserProfileDtos.UpdateButlerRequest;
+import com.easyfamily.user.dto.UserProfileDtos.UpdateEmailRequest;
 import com.easyfamily.user.dto.UserProfileDtos.UpdateNicknameRequest;
 import com.easyfamily.user.dto.UserProfileDtos.UserProfile;
 import com.easyfamily.user.service.UserProfileService;
@@ -33,6 +34,13 @@ public class UserProfileController {
     public ApiResponse<UserProfile> updateProfile(@Valid @RequestBody UpdateNicknameRequest request) {
         var current = AuthContext.currentUser();
         return ApiResponse.ok(userProfileService.updateNickname(current.userId(), current.phone(), request.nickname().trim()));
+    }
+
+    @PutMapping("/email")
+    public ApiResponse<UserProfile> updateEmail(@Valid @RequestBody UpdateEmailRequest request) {
+        var current = AuthContext.currentUser();
+        userProfileService.updateEmail(current.userId(), request.email());
+        return ApiResponse.ok(userProfileService.getProfile(current.userId(), current.phone()));
     }
 
     @PutMapping("/butler")

@@ -97,6 +97,10 @@ struct UpdateNicknameRequest: Encodable {
     let nickname: String
 }
 
+struct UpdateEmailRequest: Encodable {
+    let email: String
+}
+
 struct UpdateButlerRequest: Encodable {
     let butlerName: String?
     let butlerAvatarId: Int?

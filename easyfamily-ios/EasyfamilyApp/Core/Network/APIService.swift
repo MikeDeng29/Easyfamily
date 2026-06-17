@@ -81,6 +81,15 @@ enum APIService {
         return result
     }
 
+    static func updateEmail(token: String, email: String) async throws -> UserProfile {
+        guard let result: UserProfile = try await client.request(
+            "/api/v1/user/email", method: "PUT", token: token, body: UpdateEmailRequest(email: email)
+        ) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
     static func updateButler(token: String, request: UpdateButlerRequest) async throws -> UserProfile {
         guard let result: UserProfile = try await client.request(
             "/api/v1/user/butler", method: "PUT", token: token, body: request

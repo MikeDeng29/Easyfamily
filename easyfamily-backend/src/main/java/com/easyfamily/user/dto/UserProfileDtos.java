@@ -1,5 +1,6 @@
 package com.easyfamily.user.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -31,6 +32,19 @@ public final class UserProfileDtos {
      * optional -- only non-null fields are validated and persisted by
      * {@code UserProfileService#updateButler}.
      */
+    public record UpdateEmailRequest(
+            @Email
+            @Size(max = 200)
+            String email
+    ) {
+    }
+
+    public record UpdateNameRequest(
+            @Size(max = 50)
+            String name
+    ) {
+    }
+
     public record UpdateButlerRequest(
             String butlerName,
             Integer butlerAvatarId,

@@ -4,9 +4,11 @@ struct MineView: View {
     @EnvironmentObject private var session: AuthSession
     @State private var showLogoutConfirm = false
     @State private var showFeedback = false
+    @State private var showProfileEdit = false
     @State private var phoneCount: Int?
     @State private var familyCount: Int?
     @State private var financeRole: String = "none"
+    @State private var userProfile: UserProfile? = nil
 
     private struct Destination: Identifiable {
         let id: String
@@ -107,45 +109,69 @@ struct MineView: View {
                 async let phones = try? APIService.listMyPhones(token: token)
                 async let family = try? APIService.listFamilyMembers(token: token)
                 async let roleResult = try? APIService.getFinanceRole(token: token)
+                async let profile = try? APIService.getUserProfile(token: token)
                 phoneCount = await phones?.count
                 familyCount = await family?.count
                 financeRole = await roleResult?.role ?? "none"
+                userProfile = await profile
+            }
+            .sheet(isPresented: $showProfileEdit) {
+                ProfileEditView(profile: userProfile) { updated in
+                    userProfile = updated
+                }
+                .environmentObject(session)
             }
         }
     }
 
     private var profileCard: some View {
-        HStack(spacing: 14) {
-            Image(systemName: "person.fill")
-                .font(.system(size: 26, weight: .semibold))
-                .foregroundColor(.white)
-                .frame(width: 56, height: 56)
-                .background(
-                    LinearGradient(colors: [AppPalette.coral, AppPalette.violet], startPoint: .topLeading, endPoint: .bottomTrailing)
-                )
-                .clipShape(Circle())
+        Button { showProfileEdit = true } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "person.fill")
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 56, height: 56)
+                    .background(
+                        LinearGradient(colors: [AppPalette.coral, AppPalette.violet], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .clipShape(Circle())
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("欢迎回来")
-                    .font(.headline)
-                    .foregroundColor(AppPalette.textPrimary)
-                if let phoneCount, let familyCount {
-                    Text("已绑定 \(phoneCount) 个手机号 · 家庭成员 \(familyCount) 人")
-                        .font(.caption)
-                        .foregroundColor(AppPalette.textSecondary)
-                } else {
-                    Text("青鸟管家用户")
-                        .font(.caption)
-                        .foregroundColor(AppPalette.textSecondary)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(userProfile?.nickname ?? "青鸟管家用户")
+                        .font(.headline)
+                        .foregroundColor(AppPalette.textPrimary)
+
+                    if let phone = userProfile?.phone {
+                        Label(phone, systemImage: "phone.fill")
+                            .font(.caption)
+                            .foregroundColor(AppPalette.textSecondary)
+                    }
+
+                    if let email = userProfile?.email, !email.isEmpty {
+                        Label(email, systemImage: "envelope.fill")
+                            .font(.caption)
+                            .foregroundColor(AppPalette.textSecondary)
+                    }
+
+                    if let phoneCount, let familyCount {
+                        Text("已绑定 \(phoneCount) 个手机号 · 家庭成员 \(familyCount) 人")
+                            .font(.caption2)
+                            .foregroundColor(AppPalette.textSecondary.opacity(0.7))
+                    }
                 }
-            }
 
-            Spacer()
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(AppPalette.textSecondary)
+            }
+            .padding(16)
+            .background(AppPalette.surface)
+            .cornerRadius(16)
+            .padding(.horizontal, 16)
         }
-        .padding(16)
-        .background(AppPalette.surface)
-        .cornerRadius(16)
-        .padding(.horizontal, 16)
+        .buttonStyle(.plain)
     }
 
     private func row(for destination: Destination) -> some View {

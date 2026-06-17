@@ -46,6 +46,7 @@
 		EE00AA11BB22CC33DD44EE56 /* String+Emoji.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00AA11BB22CC33DD44EE55 /* String+Emoji.swift */; };
 		F3F5B56F4EBE1FFCAA0F6CA9 /* VehicleListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0391931CD4A2BE275D767A /* VehicleListView.swift */; };
 		FB01A2B3C4D5E6F7A8B9C0D1 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB01A2B3C4D5E6F7A8B9C0D2 /* FeedbackView.swift */; };
+		PRF100000000001 /* ProfileEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRF100000000011 /* ProfileEditView.swift */; };
 		FB01A2B3C4D5E6F7A8B9C0D3 /* FeedbackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB01A2B3C4D5E6F7A8B9C0D4 /* FeedbackViewModel.swift */; };
 		FIN1000000000001 /* FinanceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FIN1000000000011 /* FinanceViewModel.swift */; };
 		FIN1000000000002 /* FinancialHealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FIN1000000000012 /* FinancialHealthView.swift */; };
@@ -112,6 +113,7 @@
 		FD89E8F6A2C2B07C669D59C8 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		FDC9C09E142D9B67CFDD7603 /* MineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MineView.swift; sourceTree = "<group>"; };
 		FB01A2B3C4D5E6F7A8B9C0D2 /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
+		PRF100000000011 /* ProfileEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileEditView.swift; sourceTree = "<group>"; };
 		FB01A2B3C4D5E6F7A8B9C0D4 /* FeedbackViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackViewModel.swift; sourceTree = "<group>"; };
 		FIN1000000000011 /* FinanceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinanceViewModel.swift; sourceTree = "<group>"; };
 		FIN1000000000012 /* FinancialHealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinancialHealthView.swift; sourceTree = "<group>"; };
@@ -250,6 +252,7 @@
 				EDFE3B312CDF56ACF8419828 /* Family */,
 				FB01A2B3C4D5E6F7A8B9C0D5 /* Feedback */,
 				FA10000000000020 /* Finance */,
+				PRF100000000020 /* Profile */,
 				E1402E911DDF333F2F622AC7 /* Phone */,
 				8DFBF2A98FCB7306562390BB /* Query */,
 				8CA2920E22F696685513270A /* Vehicle */,
@@ -282,6 +285,14 @@
 				FB01A2B3C4D5E6F7A8B9C0D4 /* FeedbackViewModel.swift */,
 			);
 			path = Feedback;
+			sourceTree = "<group>";
+		};
+		PRF100000000020 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				PRF100000000011 /* ProfileEditView.swift */,
+			);
+			path = Profile;
 			sourceTree = "<group>";
 		};
 		BF414F30D27E7FC4AD5F0BEE /* EasyfamilyAppUITests */ = {
@@ -476,6 +487,7 @@
 				E511F365F72D4088B4616F63 /* FamilyViewModel.swift in Sources */,
 				FIN1000000000003 /* FamilyBillView.swift in Sources */,
 				FB01A2B3C4D5E6F7A8B9C0D1 /* FeedbackView.swift in Sources */,
+				PRF100000000001 /* ProfileEditView.swift in Sources */,
 				FIN1000000000001 /* FinanceViewModel.swift in Sources */,
 				FIN1000000000002 /* FinancialHealthView.swift in Sources */,
 				FIN1000000000004 /* FinancePermissionViewModel.swift in Sources */,
