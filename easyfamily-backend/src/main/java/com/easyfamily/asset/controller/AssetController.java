@@ -5,6 +5,9 @@ import com.easyfamily.asset.dto.AssetDtos.AssetItem;
 import com.easyfamily.asset.dto.AssetDtos.AssetListResponse;
 import com.easyfamily.asset.service.AssetService;
 import com.easyfamily.common.api.ApiResponse;
+import com.easyfamily.common.exception.BusinessException;
+import com.easyfamily.finance.service.FinancePermissionService;
+import com.easyfamily.finance.service.FinanceRole;
 import com.easyfamily.security.AuthContext;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,20 +24,35 @@ import org.springframework.web.bind.annotation.RestController;
 public class AssetController {
 
     private final AssetService assetService;
+    private final FinancePermissionService financePermissionService;
 
-    public AssetController(AssetService assetService) {
+    public AssetController(AssetService assetService,
+                           FinancePermissionService financePermissionService) {
         this.assetService = assetService;
+        this.financePermissionService = financePermissionService;
     }
 
     @GetMapping
     public ApiResponse<AssetListResponse> list() {
         var user = AuthContext.currentUser();
-        return ApiResponse.ok(assetService.list(user.userId()));
+        FinanceRole role = financePermissionService.resolveRole(user.userId(), user.phone());
+        if (!role.hasAccess()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED", "no access to family finance");
+        }
+        String dataUserId = role.dataUserId(user.userId());
+        return ApiResponse.ok(assetService.list(dataUserId));
     }
 
     @PostMapping
     public ApiResponse<AssetItem> create(@Valid @RequestBody AssetCreateRequest request) {
         var user = AuthContext.currentUser();
+        FinanceRole role = financePermissionService.resolveRole(user.userId(), user.phone());
+        if (!role.hasAccess()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED", "no access to family finance");
+        }
+        if (!role.isHead()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED", "viewers cannot modify finance data");
+        }
         return ApiResponse.ok(assetService.create(user.userId(), request));
     }
 
@@ -44,12 +62,26 @@ public class AssetController {
             @Valid @RequestBody AssetCreateRequest request
     ) {
         var user = AuthContext.currentUser();
+        FinanceRole role = financePermissionService.resolveRole(user.userId(), user.phone());
+        if (!role.hasAccess()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED", "no access to family finance");
+        }
+        if (!role.isHead()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED", "viewers cannot modify finance data");
+        }
         return ApiResponse.ok(assetService.update(user.userId(), id, request));
     }
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         var user = AuthContext.currentUser();
+        FinanceRole role = financePermissionService.resolveRole(user.userId(), user.phone());
+        if (!role.hasAccess()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED", "no access to family finance");
+        }
+        if (!role.isHead()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED", "viewers cannot modify finance data");
+        }
         assetService.delete(user.userId(), id);
         return ApiResponse.ok(null);
     }

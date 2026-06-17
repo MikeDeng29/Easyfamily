@@ -293,6 +293,36 @@ enum APIService {
 
     // MARK: - Finance
 
+    static func getFinanceRole(token: String) async throws -> FinanceRoleResponse {
+        guard let result: FinanceRoleResponse = try await client.request(
+            "/api/v1/finance/my-role", method: "GET", token: token
+        ) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
+    static func listFinancePermissions(token: String) async throws -> PermissionListResponse {
+        guard let result: PermissionListResponse = try await client.request(
+            "/api/v1/finance/permissions", method: "GET", token: token
+        ) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
+    static func grantFinancePermission(token: String, phone: String) async throws {
+        let _: EmptyValue? = try await client.request(
+            "/api/v1/finance/permissions", method: "POST", token: token, body: GrantPermissionRequest(phone: phone)
+        )
+    }
+
+    static func revokeFinancePermission(token: String, phone: String) async throws {
+        let _: EmptyValue? = try await client.request(
+            "/api/v1/finance/permissions/\(phone)", method: "DELETE", token: token
+        )
+    }
+
     static func getFinancialHealthReport(token: String, month: String?) async throws -> FinancialHealthReport {
         var query: [String: String]? = nil
         if let month { query = ["month": month] }

@@ -120,6 +120,7 @@ class ApiFlowTest {
         jdbcTemplate.update("DELETE FROM report_metric_daily");
         jdbcTemplate.update("DELETE FROM card_monitor_snapshot");
         jdbcTemplate.update("DELETE FROM device_push_token");
+        jdbcTemplate.update("DELETE FROM family_finance_permission");
         jdbcTemplate.update("DELETE FROM family_members");
         jdbcTemplate.update("DELETE FROM family_asset");
         jdbcTemplate.update("DELETE FROM family_liability");

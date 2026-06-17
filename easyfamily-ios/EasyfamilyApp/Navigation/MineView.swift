@@ -6,6 +6,7 @@ struct MineView: View {
     @State private var showFeedback = false
     @State private var phoneCount: Int?
     @State private var familyCount: Int?
+    @State private var financeRole: String = "none"
 
     private struct Destination: Identifiable {
         let id: String
@@ -15,16 +16,24 @@ struct MineView: View {
         let background: Color
     }
 
-    private let destinations: [Destination] = [
-        Destination(id: "family", title: "大家庭", icon: "house.fill", color: AppPalette.coral, background: AppPalette.softCoral),
-        Destination(id: "phone", title: "手机号", icon: "phone.fill", color: AppPalette.violet, background: AppPalette.softViolet),
-        Destination(id: "query", title: "查询", icon: "magnifyingglass", color: AppPalette.coral, background: AppPalette.softCoral),
-        Destination(id: "vehicle", title: "车辆", icon: "car.fill", color: AppPalette.amber, background: AppPalette.softAmber),
-        Destination(id: "bill", title: "账单", icon: "yensign.circle.fill", color: AppPalette.violet, background: AppPalette.softViolet),
-        Destination(id: "finance", title: "财务健康", icon: "chart.xyaxis.line", color: AppPalette.violet, background: AppPalette.softViolet),
-        Destination(id: "assets", title: "家庭资产", icon: "chart.pie.fill", color: Color(hex: 0x2E7D32), background: Color(hex: 0xE8F5E9)),
-        Destination(id: "liabilities", title: "家庭负债", icon: "creditcard.fill", color: AppPalette.coral, background: AppPalette.softCoral)
-    ]
+    private var visibleDestinations: [Destination] {
+        var list: [Destination] = [
+            Destination(id: "family", title: "大家庭", icon: "house.fill", color: AppPalette.coral, background: AppPalette.softCoral),
+            Destination(id: "phone", title: "手机号", icon: "phone.fill", color: AppPalette.violet, background: AppPalette.softViolet),
+            Destination(id: "query", title: "查询", icon: "magnifyingglass", color: AppPalette.coral, background: AppPalette.softCoral),
+            Destination(id: "vehicle", title: "车辆", icon: "car.fill", color: AppPalette.amber, background: AppPalette.softAmber),
+            Destination(id: "bill", title: "账单", icon: "yensign.circle.fill", color: AppPalette.violet, background: AppPalette.softViolet),
+        ]
+        if financeRole == "head" || financeRole == "viewer" {
+            list.append(Destination(id: "finance", title: "财务健康", icon: "chart.xyaxis.line", color: AppPalette.violet, background: AppPalette.softViolet))
+            list.append(Destination(id: "assets", title: "家庭资产", icon: "chart.pie.fill", color: Color(hex: 0x2E7D32), background: Color(hex: 0xE8F5E9)))
+            list.append(Destination(id: "liabilities", title: "家庭负债", icon: "creditcard.fill", color: AppPalette.coral, background: AppPalette.softCoral))
+        }
+        if financeRole == "head" {
+            list.append(Destination(id: "finance_permissions", title: "财务授权", icon: "person.badge.key.fill", color: AppPalette.violet, background: AppPalette.softViolet))
+        }
+        return list
+    }
 
     private let feedbackDestination = Destination(id: "feedback", title: "问题反馈", icon: "exclamationmark.bubble.fill", color: AppPalette.coral, background: AppPalette.softCoral)
 
@@ -34,8 +43,15 @@ struct MineView: View {
                 VStack(spacing: 24) {
                     profileCard
 
+                    if financeRole == "viewer" {
+                        Text("你正在查看家庭财务数据")
+                            .font(.caption)
+                            .foregroundColor(AppPalette.textSecondary)
+                            .padding(.horizontal, 16)
+                    }
+
                     VStack(spacing: 0) {
-                        ForEach(destinations) { destination in
+                        ForEach(visibleDestinations) { destination in
                             NavigationLink(value: destination.id) {
                                 row(for: destination)
                             }
@@ -78,6 +94,7 @@ struct MineView: View {
                 case "finance": FinancialHealthView()
                 case "assets": AssetListView()
                 case "liabilities": LiabilityListView()
+                case "finance_permissions": FinancePermissionView()
                 default: EmptyView()
                 }
             }
@@ -89,8 +106,10 @@ struct MineView: View {
                 guard let token = session.accessToken else { return }
                 async let phones = try? APIService.listMyPhones(token: token)
                 async let family = try? APIService.listFamilyMembers(token: token)
+                async let roleResult = try? APIService.getFinanceRole(token: token)
                 phoneCount = await phones?.count
                 familyCount = await family?.count
+                financeRole = await roleResult?.role ?? "none"
             }
         }
     }

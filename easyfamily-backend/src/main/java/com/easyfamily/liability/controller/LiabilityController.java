@@ -1,6 +1,9 @@
 package com.easyfamily.liability.controller;
 
 import com.easyfamily.common.api.ApiResponse;
+import com.easyfamily.common.exception.BusinessException;
+import com.easyfamily.finance.service.FinancePermissionService;
+import com.easyfamily.finance.service.FinanceRole;
 import com.easyfamily.liability.dto.LiabilityDtos.LiabilityCreateRequest;
 import com.easyfamily.liability.dto.LiabilityDtos.LiabilityItem;
 import com.easyfamily.liability.dto.LiabilityDtos.LiabilityListResponse;
@@ -21,20 +24,35 @@ import org.springframework.web.bind.annotation.RestController;
 public class LiabilityController {
 
     private final LiabilityService liabilityService;
+    private final FinancePermissionService financePermissionService;
 
-    public LiabilityController(LiabilityService liabilityService) {
+    public LiabilityController(LiabilityService liabilityService,
+                                FinancePermissionService financePermissionService) {
         this.liabilityService = liabilityService;
+        this.financePermissionService = financePermissionService;
     }
 
     @GetMapping
     public ApiResponse<LiabilityListResponse> list() {
         var user = AuthContext.currentUser();
-        return ApiResponse.ok(liabilityService.list(user.userId()));
+        FinanceRole role = financePermissionService.resolveRole(user.userId(), user.phone());
+        if (!role.hasAccess()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED", "no access to family finance");
+        }
+        String dataUserId = role.dataUserId(user.userId());
+        return ApiResponse.ok(liabilityService.list(dataUserId));
     }
 
     @PostMapping
     public ApiResponse<LiabilityItem> create(@Valid @RequestBody LiabilityCreateRequest request) {
         var user = AuthContext.currentUser();
+        FinanceRole role = financePermissionService.resolveRole(user.userId(), user.phone());
+        if (!role.hasAccess()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED", "no access to family finance");
+        }
+        if (!role.isHead()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED", "viewers cannot modify finance data");
+        }
         return ApiResponse.ok(liabilityService.create(user.userId(), request));
     }
 
@@ -44,12 +62,26 @@ public class LiabilityController {
             @Valid @RequestBody LiabilityCreateRequest request
     ) {
         var user = AuthContext.currentUser();
+        FinanceRole role = financePermissionService.resolveRole(user.userId(), user.phone());
+        if (!role.hasAccess()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED", "no access to family finance");
+        }
+        if (!role.isHead()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED", "viewers cannot modify finance data");
+        }
         return ApiResponse.ok(liabilityService.update(user.userId(), id, request));
     }
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         var user = AuthContext.currentUser();
+        FinanceRole role = financePermissionService.resolveRole(user.userId(), user.phone());
+        if (!role.hasAccess()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED", "no access to family finance");
+        }
+        if (!role.isHead()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED", "viewers cannot modify finance data");
+        }
         liabilityService.delete(user.userId(), id);
         return ApiResponse.ok(null);
     }

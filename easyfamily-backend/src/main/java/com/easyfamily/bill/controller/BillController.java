@@ -8,6 +8,9 @@ import com.easyfamily.bill.dto.BillDtos.MonthlyTrendItem;
 import com.easyfamily.bill.dto.BillDtos.SecurityReportDto;
 import com.easyfamily.bill.service.BillService;
 import com.easyfamily.common.api.ApiResponse;
+import com.easyfamily.common.exception.BusinessException;
+import com.easyfamily.finance.service.FinancePermissionService;
+import com.easyfamily.finance.service.FinanceRole;
 import com.easyfamily.security.AuthContext;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,9 +30,12 @@ import java.util.List;
 public class BillController {
 
     private final BillService billService;
+    private final FinancePermissionService financePermissionService;
 
-    public BillController(BillService billService) {
+    public BillController(BillService billService,
+                          FinancePermissionService financePermissionService) {
         this.billService = billService;
+        this.financePermissionService = financePermissionService;
     }
 
     @PostMapping
@@ -83,6 +89,11 @@ public class BillController {
     @GetMapping("/family-stats")
     public ApiResponse<FamilyBillStats> familyStats(@RequestParam(required = false) String month) {
         var user = AuthContext.currentUser();
+        FinanceRole role = financePermissionService.resolveRole(user.userId(), user.phone());
+        if (!role.isHead()) {
+            throw new BusinessException("FINANCE_ACCESS_DENIED",
+                    "only household head can access family-stats");
+        }
         return ApiResponse.ok(billService.familyStats(user.userId(), month));
     }
 }

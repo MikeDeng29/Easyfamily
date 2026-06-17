@@ -44,7 +44,8 @@ public final class ClientErrorMapper {
             entry("MEMORY_NOT_FOUND", new ErrorView("BIZ_ERROR", "记忆不存在或无权操作")),
             entry("INVALID_BUTLER_NAME", new ErrorView("INVALID_PARAM", "管家名称长度需在1-10个字符之间")),
             entry("INVALID_BUTLER_AVATAR_ID", new ErrorView("INVALID_PARAM", "管家头像编号必须在1-8之间")),
-            entry("INVALID_BUTLER_PERSONA", new ErrorView("INVALID_PARAM", "管家语气只能是 warm/strict/humorous 之一"))
+            entry("INVALID_BUTLER_PERSONA", new ErrorView("INVALID_PARAM", "管家语气只能是 warm/strict/humorous 之一")),
+            entry("FINANCE_ACCESS_DENIED", new ErrorView("FINANCE_ACCESS_DENIED", "无家庭财务访问权限"))
     );
 
     private ClientErrorMapper() {

@@ -349,6 +349,22 @@ struct LiabilityCreateRequest: Encodable {
     let note: String?
 }
 
+// MARK: - Finance Permissions
+
+struct FinanceRoleResponse: Codable {
+    let role: String        // "head" | "viewer" | "none"
+    let headUserId: String?
+    let headName: String?
+}
+
+struct PermissionListResponse: Codable {
+    let viewers: [String]   // 脱敏手机号
+}
+
+struct GrantPermissionRequest: Encodable {
+    let phone: String
+}
+
 // MARK: - Family Finance
 
 struct FinancialHealthReport: Codable {
