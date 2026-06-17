@@ -153,7 +153,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "easyfamily",
+                text = "青鸟管家",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White

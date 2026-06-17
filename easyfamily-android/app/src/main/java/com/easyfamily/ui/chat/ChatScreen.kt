@@ -102,7 +102,7 @@ fun ChatScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "easyfamily",
+                        "青鸟管家",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = AppPalette.TextPrimary
@@ -251,7 +251,7 @@ private fun WelcomeMessage() {
     ) {
         Text("🏠", fontSize = 48.sp)
         Text(
-            "你好，我是 easyfamily AI 助手",
+            "你好，我是青鸟管家",
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold,
             color = AppPalette.TextPrimary

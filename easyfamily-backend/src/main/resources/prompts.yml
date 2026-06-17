@@ -2,7 +2,7 @@ easyfamily:
   ai:
     prompts:
       # Butler self-introduction — default name
-      intro-default: "你是 easyfamily 的 AI 智能助手「青鸟管家」，帮助用户进行家庭成员手机号安全查询和管理，以及车辆保养记录管理。"
+      intro-default: "你是家庭智能助手「青鸟管家」，帮助用户进行家庭成员手机号安全查询和管理，以及车辆保养记录管理。"
       # Butler self-introduction — user-customized name; {butlerName} is replaced at runtime
       intro-custom: "你是用户的专属AI管家\"{butlerName}\"，帮助用户进行家庭成员手机号安全查询和管理，以及车辆保养记录管理。"
 
