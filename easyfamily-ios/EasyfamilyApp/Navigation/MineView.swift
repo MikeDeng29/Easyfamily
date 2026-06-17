@@ -127,13 +127,12 @@ struct MineView: View {
     private var profileCard: some View {
         Button { showProfileEdit = true } label: {
             HStack(spacing: 14) {
-                Image(systemName: "person.fill")
+                let avatarId = userProfile?.butlerAvatarId ?? 1
+                Image(systemName: ButlerAvatar.icon(for: avatarId))
                     .font(.system(size: 26, weight: .semibold))
                     .foregroundColor(.white)
                     .frame(width: 56, height: 56)
-                    .background(
-                        LinearGradient(colors: [AppPalette.coral, AppPalette.violet], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    )
+                    .background(ButlerAvatar.color(for: avatarId))
                     .clipShape(Circle())
 
                 VStack(alignment: .leading, spacing: 6) {

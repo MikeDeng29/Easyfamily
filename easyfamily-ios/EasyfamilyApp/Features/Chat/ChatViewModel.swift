@@ -50,6 +50,15 @@ final class ChatViewModel: ObservableObject {
         if let cachedPersona = profileStore.loadButlerPersona() {
             butlerPersona = cachedPersona
         }
+
+        NotificationCenter.default.addObserver(
+            forName: .butlerIdentityUpdated, object: nil, queue: .main
+        ) { [weak self] notification in
+            guard let self, let info = notification.userInfo else { return }
+            if let name = info["name"] as? String { self.butlerName = name }
+            if let avatarId = info["avatarId"] as? Int { self.butlerAvatarId = avatarId }
+            if let persona = info["persona"] as? String { self.butlerPersona = persona }
+        }
     }
 
     var canSubmitNickname: Bool {
@@ -230,4 +239,8 @@ final class ChatViewModel: ObservableObject {
         last.isStreaming = false
         messages.append(last)
     }
+}
+
+extension Notification.Name {
+    static let butlerIdentityUpdated = Notification.Name("com.easyfamily.butlerIdentityUpdated")
 }
