@@ -7,8 +7,8 @@ struct ChatView: View {
     @FocusState private var nicknameFocused: Bool
 
     private let suggestions: [(icon: String, text: String)] = [
-        ("magnifyingglass", "查一下手机号"),
-        ("chart.bar.fill", "查询今日配额"),
+        ("yensign.circle.fill", "帮我记一笔账"),
+        ("car.fill", "查看车辆保养记录"),
         ("person.2.fill", "添加家庭成员")
     ]
 
@@ -73,7 +73,7 @@ struct ChatView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("嗨，\(viewModel.nickname ?? "")！").font(.headline)
-                    Text("我是\(viewModel.butlerName)，可以帮你查手机号绑定、记账、查配额")
+                    Text("我是\(viewModel.butlerName)，可以帮你记账、管理家庭成员和车辆")
                         .font(.caption)
                         .foregroundColor(AppPalette.textSecondary)
                 }
