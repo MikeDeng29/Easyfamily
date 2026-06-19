@@ -218,12 +218,309 @@ object ApiClient {
 
     private fun parseBillItem(obj: JSONObject) = BillItemDto(
         id = obj.getLong("id"),
+        direction = obj.optString("direction", "expense"),
         category = obj.getString("category"),
         amount = obj.getDouble("amount"),
         note = obj.optString("note").takeIf { it.isNotEmpty() },
         billedAt = obj.getString("billedAt"),
         createdAt = obj.getLong("createdAt")
     )
+
+    // --- User Profile APIs ---
+
+    suspend fun getUserProfile(accessToken: String): UserProfileData = withContext(Dispatchers.IO) {
+        val json = request("GET", "/api/v1/user/profile", accessToken = accessToken)
+        val d = json.getJSONObject("data")
+        UserProfileData(
+            userId = d.optString("userId", ""),
+            phone = d.optString("phone").takeIf { it.isNotEmpty() },
+            nickname = d.optString("nickname").takeIf { it.isNotEmpty() },
+            butlerName = d.optString("butlerName").takeIf { it.isNotEmpty() },
+            butlerAvatarId = d.optInt("butlerAvatarId", 1).takeIf { it > 0 },
+            butlerPersona = d.optString("butlerPersona").takeIf { it.isNotEmpty() },
+            email = d.optString("email").takeIf { it.isNotEmpty() }
+        )
+    }
+
+    suspend fun updateNickname(accessToken: String, nickname: String): UserProfileData = withContext(Dispatchers.IO) {
+        val payload = JSONObject().put("nickname", nickname)
+        val json = request("PUT", "/api/v1/user/profile", accessToken, payload)
+        val d = json.getJSONObject("data")
+        parseUserProfile(d)
+    }
+
+    suspend fun updateEmail(accessToken: String, email: String): UserProfileData = withContext(Dispatchers.IO) {
+        val payload = JSONObject().put("email", email)
+        val json = request("PUT", "/api/v1/user/email", accessToken, payload)
+        val d = json.getJSONObject("data")
+        parseUserProfile(d)
+    }
+
+    suspend fun updateButler(
+        accessToken: String,
+        butlerName: String,
+        butlerAvatarId: Int,
+        butlerPersona: String
+    ): UserProfileData = withContext(Dispatchers.IO) {
+        val payload = JSONObject()
+            .put("butlerName", butlerName)
+            .put("butlerAvatarId", butlerAvatarId)
+            .put("butlerPersona", butlerPersona)
+        val json = request("PUT", "/api/v1/user/butler", accessToken, payload)
+        val d = json.getJSONObject("data")
+        parseUserProfile(d)
+    }
+
+    private fun parseUserProfile(d: JSONObject) = UserProfileData(
+        userId = d.optString("userId", ""),
+        phone = d.optString("phone").takeIf { it.isNotEmpty() },
+        nickname = d.optString("nickname").takeIf { it.isNotEmpty() },
+        butlerName = d.optString("butlerName").takeIf { it.isNotEmpty() },
+        butlerAvatarId = d.optInt("butlerAvatarId", 1).takeIf { it > 0 },
+        butlerPersona = d.optString("butlerPersona").takeIf { it.isNotEmpty() },
+        email = d.optString("email").takeIf { it.isNotEmpty() }
+    )
+
+    // --- Feedback ---
+
+    suspend fun submitFeedback(
+        accessToken: String,
+        title: String?,
+        description: String,
+        email: String?
+    ) = withContext(Dispatchers.IO) {
+        val payload = JSONObject().put("description", description)
+        if (!title.isNullOrBlank()) payload.put("title", title)
+        if (!email.isNullOrBlank()) payload.put("email", email)
+        request("POST", "/api/v1/feedback", accessToken, payload)
+    }
+
+    // --- Asset APIs ---
+
+    suspend fun listAssets(accessToken: String): Pair<List<AssetData>, Double> = withContext(Dispatchers.IO) {
+        val json = request("GET", "/api/v1/asset", accessToken = accessToken)
+        val d = json.getJSONObject("data")
+        val arr = d.optJSONArray("items") ?: JSONArray()
+        val items = buildList {
+            for (i in 0 until arr.length()) add(parseAsset(arr.getJSONObject(i)))
+        }
+        Pair(items, d.optDouble("totalValue", 0.0))
+    }
+
+    suspend fun createAsset(
+        accessToken: String,
+        name: String,
+        assetType: String,
+        value: Double,
+        note: String?
+    ): AssetData = withContext(Dispatchers.IO) {
+        val payload = JSONObject()
+            .put("name", name)
+            .put("assetType", assetType)
+            .put("value", value)
+        if (!note.isNullOrBlank()) payload.put("note", note)
+        val json = request("POST", "/api/v1/asset", accessToken, payload)
+        parseAsset(json.getJSONObject("data"))
+    }
+
+    suspend fun updateAsset(
+        accessToken: String,
+        id: Int,
+        name: String,
+        assetType: String,
+        value: Double,
+        note: String?
+    ): AssetData = withContext(Dispatchers.IO) {
+        val payload = JSONObject()
+            .put("name", name)
+            .put("assetType", assetType)
+            .put("value", value)
+        if (!note.isNullOrBlank()) payload.put("note", note)
+        val json = request("PUT", "/api/v1/asset/$id", accessToken, payload)
+        parseAsset(json.getJSONObject("data"))
+    }
+
+    suspend fun deleteAsset(accessToken: String, id: Int) = withContext(Dispatchers.IO) {
+        request("DELETE", "/api/v1/asset/$id", accessToken = accessToken)
+    }
+
+    private fun parseAsset(obj: JSONObject) = AssetData(
+        id = obj.getInt("id"),
+        name = obj.getString("name"),
+        assetType = obj.getString("assetType"),
+        value = obj.getDouble("value"),
+        note = obj.optString("note").takeIf { it.isNotEmpty() },
+        createdAt = obj.optString("createdAt", "")
+    )
+
+    // --- Liability APIs ---
+
+    suspend fun listLiabilities(accessToken: String): Triple<List<LiabilityData>, Double, Double> = withContext(Dispatchers.IO) {
+        val json = request("GET", "/api/v1/liability", accessToken = accessToken)
+        val d = json.getJSONObject("data")
+        val arr = d.optJSONArray("items") ?: JSONArray()
+        val items = buildList {
+            for (i in 0 until arr.length()) add(parseLiability(arr.getJSONObject(i)))
+        }
+        Triple(items, d.optDouble("totalBalance", 0.0), d.optDouble("totalMonthlyPayment", 0.0))
+    }
+
+    suspend fun createLiability(
+        accessToken: String,
+        name: String,
+        liabilityType: String,
+        balance: Double,
+        monthlyPayment: Double?,
+        interestRate: Double?,
+        note: String?
+    ): LiabilityData = withContext(Dispatchers.IO) {
+        val payload = JSONObject()
+            .put("name", name)
+            .put("liabilityType", liabilityType)
+            .put("balance", balance)
+        if (monthlyPayment != null) payload.put("monthlyPayment", monthlyPayment)
+        if (interestRate != null) payload.put("interestRate", interestRate)
+        if (!note.isNullOrBlank()) payload.put("note", note)
+        val json = request("POST", "/api/v1/liability", accessToken, payload)
+        parseLiability(json.getJSONObject("data"))
+    }
+
+    suspend fun updateLiability(
+        accessToken: String,
+        id: Int,
+        name: String,
+        liabilityType: String,
+        balance: Double,
+        monthlyPayment: Double?,
+        interestRate: Double?,
+        note: String?
+    ): LiabilityData = withContext(Dispatchers.IO) {
+        val payload = JSONObject()
+            .put("name", name)
+            .put("liabilityType", liabilityType)
+            .put("balance", balance)
+        if (monthlyPayment != null) payload.put("monthlyPayment", monthlyPayment)
+        if (interestRate != null) payload.put("interestRate", interestRate)
+        if (!note.isNullOrBlank()) payload.put("note", note)
+        val json = request("PUT", "/api/v1/liability/$id", accessToken, payload)
+        parseLiability(json.getJSONObject("data"))
+    }
+
+    suspend fun deleteLiability(accessToken: String, id: Int) = withContext(Dispatchers.IO) {
+        request("DELETE", "/api/v1/liability/$id", accessToken = accessToken)
+    }
+
+    private fun parseLiability(obj: JSONObject) = LiabilityData(
+        id = obj.getInt("id"),
+        name = obj.getString("name"),
+        liabilityType = obj.getString("liabilityType"),
+        balance = obj.getDouble("balance"),
+        monthlyPayment = obj.optDouble("monthlyPayment").takeIf { !it.isNaN() },
+        interestRate = obj.optDouble("interestRate").takeIf { !it.isNaN() },
+        note = obj.optString("note").takeIf { it.isNotEmpty() },
+        createdAt = obj.optString("createdAt", "")
+    )
+
+    // --- Finance APIs ---
+
+    suspend fun getFinanceRole(accessToken: String): FinanceRoleData = withContext(Dispatchers.IO) {
+        val json = request("GET", "/api/v1/finance/my-role", accessToken = accessToken)
+        val d = json.getJSONObject("data")
+        FinanceRoleData(
+            role = d.optString("role", "none"),
+            headUserId = d.optString("headUserId").takeIf { it.isNotEmpty() },
+            headName = d.optString("headName").takeIf { it.isNotEmpty() }
+        )
+    }
+
+    suspend fun listFinancePermissions(accessToken: String): List<String> = withContext(Dispatchers.IO) {
+        val json = request("GET", "/api/v1/finance/permissions", accessToken = accessToken)
+        val d = json.getJSONObject("data")
+        val arr = d.optJSONArray("viewers") ?: JSONArray()
+        buildList { for (i in 0 until arr.length()) add(arr.getString(i)) }
+    }
+
+    suspend fun grantFinancePermission(accessToken: String, phone: String) = withContext(Dispatchers.IO) {
+        val payload = JSONObject().put("phone", phone)
+        request("POST", "/api/v1/finance/permissions", accessToken, payload)
+    }
+
+    suspend fun revokeFinancePermission(accessToken: String, phone: String) = withContext(Dispatchers.IO) {
+        request("DELETE", "/api/v1/finance/permissions/$phone", accessToken = accessToken)
+    }
+
+    suspend fun getHealthReport(accessToken: String, month: String): HealthReportData = withContext(Dispatchers.IO) {
+        val json = request("GET", "/api/v1/finance/health-report?month=$month", accessToken = accessToken)
+        val d = json.getJSONObject("data")
+        val sugArr = d.optJSONArray("suggestions") ?: JSONArray()
+        HealthReportData(
+            monthlyIncome = d.optDouble("monthlyIncome", 0.0),
+            monthlyExpense = d.optDouble("monthlyExpense", 0.0),
+            netSavings = d.optDouble("netSavings", 0.0),
+            savingsRate = d.optDouble("savingsRate").takeIf { !it.isNaN() },
+            totalAssets = d.optDouble("totalAssets", 0.0),
+            liquidAssets = d.optDouble("liquidAssets", 0.0),
+            totalLiabilities = d.optDouble("totalLiabilities", 0.0),
+            totalMonthlyPayment = d.optDouble("totalMonthlyPayment", 0.0),
+            debtToIncomeRatio = d.optDouble("debtToIncomeRatio", 0.0),
+            netWorth = d.optDouble("netWorth", 0.0),
+            emergencyFundMonths = d.optDouble("emergencyFundMonths", 0.0),
+            healthScore = d.optInt("healthScore", 0),
+            healthLevel = d.optString("healthLevel", ""),
+            suggestions = buildList { for (i in 0 until sugArr.length()) add(sugArr.getString(i)) }
+        )
+    }
+
+    suspend fun getFamilyBillStats(accessToken: String, month: String): FamilyBillStatsData = withContext(Dispatchers.IO) {
+        val json = request("GET", "/api/v1/bill/family-stats?month=$month", accessToken = accessToken)
+        val d = json.getJSONObject("data")
+        val membersArr = d.optJSONArray("members") ?: JSONArray()
+        FamilyBillStatsData(
+            members = buildList {
+                for (i in 0 until membersArr.length()) {
+                    val m = membersArr.getJSONObject(i)
+                    add(MemberStatsData(
+                        memberId = m.optString("memberId", ""),
+                        memberName = m.optString("memberName", ""),
+                        relation = m.optString("relation", ""),
+                        income = m.optDouble("income", 0.0),
+                        expense = m.optDouble("expense", 0.0),
+                        netSavings = m.optDouble("netSavings", 0.0)
+                    ))
+                }
+            },
+            totalIncome = d.optDouble("totalIncome", 0.0),
+            totalExpense = d.optDouble("totalExpense", 0.0),
+            netSavings = d.optDouble("netSavings", 0.0),
+            savingsRate = d.optDouble("savingsRate").takeIf { !it.isNaN() }
+        )
+    }
+
+    // --- Family member management ---
+
+    suspend fun addFamilyMember(
+        accessToken: String,
+        name: String,
+        phone: String,
+        relation: String
+    ): FamilyMemberItem = withContext(Dispatchers.IO) {
+        val payload = JSONObject()
+            .put("name", name)
+            .put("phone", phone)
+            .put("relation", relation)
+        val json = request("POST", "/api/v1/family/members", accessToken, payload)
+        val d = json.getJSONObject("data")
+        FamilyMemberItem(
+            memberId = d.optString("memberId", ""),
+            name = d.optString("name", name),
+            phone = d.optString("phone", phone),
+            relation = d.optString("relation", relation)
+        )
+    }
+
+    suspend fun deleteFamilyMember(accessToken: String, memberId: String) = withContext(Dispatchers.IO) {
+        request("DELETE", "/api/v1/family/members/$memberId", accessToken = accessToken)
+    }
 
     // --- Vehicle APIs ---
 
@@ -506,6 +803,7 @@ data class FamilyMemberItem(
 
 data class BillItemDto(
     val id: Long,
+    val direction: String = "expense",
     val category: String,
     val amount: Double,
     val note: String?,
@@ -565,4 +863,74 @@ data class VehicleStatsDto(
     val totalRecords: Long,
     val totalItems: Long,
     val byCategory: List<CategoryStatDto>
+)
+
+data class UserProfileData(
+    val userId: String,
+    val phone: String?,
+    val nickname: String?,
+    val butlerName: String?,
+    val butlerAvatarId: Int?,
+    val butlerPersona: String?,
+    val email: String?
+)
+
+data class AssetData(
+    val id: Int,
+    val name: String,
+    val assetType: String,
+    val value: Double,
+    val note: String?,
+    val createdAt: String
+)
+
+data class LiabilityData(
+    val id: Int,
+    val name: String,
+    val liabilityType: String,
+    val balance: Double,
+    val monthlyPayment: Double?,
+    val interestRate: Double?,
+    val note: String?,
+    val createdAt: String
+)
+
+data class FinanceRoleData(
+    val role: String,
+    val headUserId: String?,
+    val headName: String?
+)
+
+data class HealthReportData(
+    val monthlyIncome: Double,
+    val monthlyExpense: Double,
+    val netSavings: Double,
+    val savingsRate: Double?,
+    val totalAssets: Double,
+    val liquidAssets: Double,
+    val totalLiabilities: Double,
+    val totalMonthlyPayment: Double,
+    val debtToIncomeRatio: Double,
+    val netWorth: Double,
+    val emergencyFundMonths: Double,
+    val healthScore: Int,
+    val healthLevel: String,
+    val suggestions: List<String>
+)
+
+data class MemberStatsData(
+    val memberId: String,
+    val memberName: String,
+    val relation: String,
+    val income: Double,
+    val expense: Double,
+    val netSavings: Double
+)
+
+data class FamilyBillStatsData(
+    val members: List<MemberStatsData>,
+    val totalIncome: Double,
+    val totalExpense: Double,
+    val netSavings: Double,
+    val savingsRate: Double?
 )

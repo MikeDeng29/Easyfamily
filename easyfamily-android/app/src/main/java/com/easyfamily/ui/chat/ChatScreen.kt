@@ -27,6 +27,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -257,37 +261,56 @@ private fun WelcomeMessage() {
             color = AppPalette.TextPrimary
         )
         Text(
-            "可以帮你查询手机号、管理家庭成员、\n检查配额，直接告诉我你想做什么吧",
+            "我是青鸟管家，可以帮你记账、管理家庭成员和车辆",
             fontSize = 14.sp,
             color = AppPalette.TextSecondary,
             textAlign = TextAlign.Center,
             lineHeight = 22.sp
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SuggestionChip("查一下手机号")
-            SuggestionChip("查询今日配额")
-            SuggestionChip("添加家庭成员")
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SuggestionChip(text = "帮我记一笔账", icon = Icons.Default.Edit)
+            SuggestionChip(text = "查看车辆保养记录", icon = Icons.Default.DirectionsCar)
+            SuggestionChip(text = "添加家庭成员", icon = Icons.Default.PersonAdd)
         }
     }
 }
 
 @Composable
-private fun SuggestionChip(text: String) {
+private fun SuggestionChip(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null
+) {
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = AppPalette.SoftCoral,
         modifier = Modifier
-            .padding(vertical = 4.dp)
-            .clickable { /* TODO: auto-fill input */ }
+            .padding(vertical = 2.dp)
+            .clickable { /* auto-fill handled by parent */ }
     ) {
-        Text(
-            text,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-            fontSize = 13.sp,
-            color = AppPalette.Coral,
-            fontWeight = FontWeight.Medium
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = AppPalette.Coral,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+            Text(
+                text,
+                fontSize = 13.sp,
+                color = AppPalette.Coral,
+                fontWeight = FontWeight.Medium
+            )
+        }
     }
 }
 
