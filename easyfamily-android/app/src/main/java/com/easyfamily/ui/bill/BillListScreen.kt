@@ -7,14 +7,21 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -22,6 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -114,6 +122,10 @@ fun BillListScreen(
 
 @Composable
 private fun BillCard(bill: BillItemDto, onDelete: () -> Unit) {
+    val isIncome = bill.direction == "income"
+    val directionColor = if (isIncome) AppPalette.Success else AppPalette.Coral
+    val amountText = if (isIncome) "+¥%.2f".format(bill.amount) else "-¥%.2f".format(bill.amount)
+
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -123,8 +135,25 @@ private fun BillCard(bill: BillItemDto, onDelete: () -> Unit) {
             modifier = Modifier.fillMaxWidth().padding(12.dp, 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Category emoji
             Text(categoryEmoji(bill.category), fontSize = 24.sp)
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            // Direction icon badge
+            Surface(
+                shape = CircleShape,
+                color = if (isIncome) Color(0xFFE8F5E9) else AppPalette.SoftCoral,
+                modifier = Modifier.size(22.dp)
+            ) {
+                Icon(
+                    imageVector = if (isIncome) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                    contentDescription = if (isIncome) "收入" else "支出",
+                    tint = directionColor,
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .size(14.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     bill.note?.takeIf { it.isNotBlank() } ?: bill.category,
@@ -139,10 +168,10 @@ private fun BillCard(bill: BillItemDto, onDelete: () -> Unit) {
                 )
             }
             Text(
-                "¥%.2f".format(bill.amount),
+                amountText,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
-                color = AppPalette.TextPrimary
+                color = directionColor
             )
             Spacer(modifier = Modifier.width(8.dp))
             FilledTonalButton(
