@@ -21,11 +21,11 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField "String", "API_BASE_URL", "\"http://47.102.126.67:8080\""
+            buildConfigField "String", "API_BASE_URL", "\"https://easyfamily.xin\""
         }
         release {
             minifyEnabled false
-            buildConfigField "String", "API_BASE_URL", "\"https://api.easyfamily.com\""
+            buildConfigField "String", "API_BASE_URL", "\"https://easyfamily.xin\""
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
