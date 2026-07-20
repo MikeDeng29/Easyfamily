@@ -40,6 +40,7 @@ targets:
           NSAllowsArbitraryLoads: true
         NSMicrophoneUsageDescription: "用于语音输入消息"
         NSSpeechRecognitionUsageDescription: "用于将语音转换为文字消息"
+        NSLocationWhenInUseUsageDescription: "用于自动获取所在城市，生成更贴近的菜单推荐"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.easyfamily.ios

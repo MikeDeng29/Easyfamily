@@ -153,6 +153,17 @@ struct WeeklyMenuView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
+            let liked = viewModel.likedDishes.contains(content)
+            Button {
+                guard let token = session.accessToken else { return }
+                viewModel.toggleLike(token: token, dishName: content)
+            } label: {
+                Image(systemName: liked ? "heart.fill" : "heart")
+                    .font(.system(size: 14))
+                    .foregroundColor(liked ? AppPalette.coral : AppPalette.textSecondary.opacity(0.4))
+            }
+            .buttonStyle(.borderless)
+            .padding(.top, 2)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)

@@ -435,6 +435,10 @@ struct DayMenuDto: Decodable {
     let keyVegetables: [String]
 }
 
+struct DishPreferenceRequest: Encodable {
+    let dishName: String
+}
+
 // MARK: - Family Finance
 
 struct FinancialHealthReport: Codable {

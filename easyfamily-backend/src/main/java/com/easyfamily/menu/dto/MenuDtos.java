@@ -21,4 +21,6 @@ public final class MenuDtos {
             String dinner,           // brief description
             List<String> keyVegetables  // 2-3 seasonal vegetables highlighted for this day
     ) {}
+
+    public record PreferenceRequest(String dishName) {}
 }

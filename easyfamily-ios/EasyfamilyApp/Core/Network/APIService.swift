@@ -131,6 +131,13 @@ enum APIService {
         return result
     }
 
+    static func markDishPreference(token: String, dishName: String) async throws {
+        let _: EmptyBody? = try await client.request(
+            "/api/v1/menu/preference", method: "POST", token: token,
+            body: DishPreferenceRequest(dishName: dishName)
+        )
+    }
+
     // MARK: - Phones
 
     static func listMyPhones(token: String) async throws -> [PhoneItem] {

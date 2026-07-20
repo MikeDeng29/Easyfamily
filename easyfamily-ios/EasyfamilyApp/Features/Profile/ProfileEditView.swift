@@ -16,6 +16,8 @@ struct ProfileEditView: View {
     @State private var isSaving = false
     @State private var error: String? = nil
 
+    @StateObject private var locationManager = LocationManager()
+
     private let profileStore = UserProfileStore()
 
     var body: some View {
@@ -56,8 +58,26 @@ struct ProfileEditView: View {
                         }
                         Divider().padding(.leading, 60)
                         formRow(label: "所在城市", icon: "mappin.circle.fill") {
-                            TextField("如：上海、北京", text: $city)
-                                .multilineTextAlignment(.trailing)
+                            HStack(spacing: 8) {
+                                TextField("如：上海、北京", text: $city)
+                                    .multilineTextAlignment(.trailing)
+                                Button {
+                                    Task { await locateCity() }
+                                } label: {
+                                    if case .locating = locationManager.status {
+                                        ProgressView().scaleEffect(0.75)
+                                    } else {
+                                        Image(systemName: "location.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(AppPalette.coral)
+                                    }
+                                }
+                                .buttonStyle(.borderless)
+                                .disabled({
+                                    if case .locating = locationManager.status { return true }
+                                    return false
+                                }())
+                            }
                         }
                     }
                     .background(AppPalette.surface)
@@ -229,6 +249,15 @@ struct ProfileEditView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .contentShape(Rectangle())
+    }
+
+    private func locateCity() async {
+        let result = await locationManager.fetchCity()
+        if case .success(let name) = result {
+            city = name
+        } else if case .failure(let err) = result {
+            error = err.localizedDescription
+        }
     }
 
     private func save() async {
