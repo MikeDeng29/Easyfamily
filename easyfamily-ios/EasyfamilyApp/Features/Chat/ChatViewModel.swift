@@ -13,6 +13,8 @@ final class ChatViewModel: ObservableObject {
     @Published var input: String = ""
     @Published var loading: Bool = false
     @Published var pendingBillAction: BillActionData?
+    @Published var pendingFamilyAction: FamilyActionData?
+    @Published var familyMembers: [FamilyMemberItem] = []
     @Published var nickname: String?
     @Published var nicknameInput: String = ""
     @Published var isProfileLoaded: Bool = false
@@ -30,9 +32,8 @@ final class ChatViewModel: ObservableObject {
     @Published var butlerAvatarIdInput: Int = 1
     @Published var butlerPersonaInput: String = "warm"
 
-    /// Matches `<!--BILL_ACTION:{...}-->` appended by the backend's chat system prompt
-    /// when it detects a bill-recording intent.
     private static let billActionRegex = try! NSRegularExpression(pattern: "<!--BILL_ACTION:(\\{.*?\\})-->", options: [.dotMatchesLineSeparators])
+    private static let familyActionRegex = try! NSRegularExpression(pattern: "<!--FAMILY_ACTION:(\\{.*?\\})-->", options: [.dotMatchesLineSeparators])
 
     private let profileStore = UserProfileStore()
 
@@ -65,23 +66,21 @@ final class ChatViewModel: ObservableObject {
         !nicknameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    /// Refreshes the profile (nickname + butler identity) from the server (source of
-    /// truth), falling back to the locally cached values if the request fails.
     func loadProfile(token: String) async {
-        do {
-            let profile = try await APIService.getUserProfile(token: token)
+        async let profileResult = APIService.getUserProfile(token: token)
+        async let membersResult = APIService.listFamilyMembers(token: token)
+
+        if let profile = try? await profileResult {
             if let serverNickname = profile.nickname {
                 nickname = serverNickname
                 profileStore.saveNickname(serverNickname)
             }
-
             if let name = profile.butlerName { butlerName = name }
             if let avatarId = profile.butlerAvatarId { butlerAvatarId = avatarId }
             if let persona = profile.butlerPersona { butlerPersona = persona }
             profileStore.saveButlerIdentity(name: butlerName, avatarId: butlerAvatarId, persona: butlerPersona)
-        } catch {
-            // Keep showing the locally cached values (already set in init) when offline.
         }
+        familyMembers = (try? await membersResult) ?? []
         isProfileLoaded = true
     }
 
@@ -217,6 +216,35 @@ final class ChatViewModel: ObservableObject {
         messages.append(ChatMessage(role: "ai", content: "好的，已取消本次记账"))
     }
 
+    func confirmFamilyAction(token: String) {
+        guard let action = pendingFamilyAction else { return }
+        pendingFamilyAction = nil
+        Task {
+            do {
+                if action.action == "add", let phone = action.phone {
+                    let member = try await APIService.addFamilyMember(token: token, name: action.name, phone: phone, relation: action.relation)
+                    familyMembers.append(member)
+                    messages.append(ChatMessage(role: "ai", content: "已添加家庭成员：\(action.name)（\(action.relation)）"))
+                } else if action.action == "delete" {
+                    guard let member = familyMembers.first(where: { $0.name == action.name }) else {
+                        messages.append(ChatMessage(role: "ai", content: "未找到成员「\(action.name)」，无法删除"))
+                        return
+                    }
+                    try await APIService.deleteFamilyMember(token: token, memberId: member.memberId)
+                    familyMembers.removeAll { $0.memberId == member.memberId }
+                    messages.append(ChatMessage(role: "ai", content: "已移除家庭成员：\(action.name)（\(action.relation)）"))
+                }
+            } catch {
+                messages.append(ChatMessage(role: "ai", content: "操作失败：\(error.localizedDescription)"))
+            }
+        }
+    }
+
+    func dismissFamilyAction() {
+        pendingFamilyAction = nil
+        messages.append(ChatMessage(role: "ai", content: "好的，已取消操作"))
+    }
+
     private func appendToLastMessage(_ chunk: String) {
         guard var last = messages.popLast() else { return }
         last.content += chunk
@@ -225,17 +253,31 @@ final class ChatViewModel: ObservableObject {
 
     private func finishStreaming() {
         guard var last = messages.popLast() else { return }
-        let content = last.content
+        var content = last.content
         let range = NSRange(content.startIndex..<content.endIndex, in: content)
+
         if let match = Self.billActionRegex.firstMatch(in: content, range: range),
            let jsonRange = Range(match.range(at: 1), in: content),
            let fullRange = Range(match.range(at: 0), in: content) {
             let json = String(content[jsonRange])
-            last.content = content.replacingCharacters(in: fullRange, with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            content = content.replacingCharacters(in: fullRange, with: "").trimmingCharacters(in: .whitespacesAndNewlines)
             if let data = json.data(using: .utf8), let action = try? JSONDecoder().decode(BillActionData.self, from: data) {
                 pendingBillAction = action
             }
         }
+
+        let range2 = NSRange(content.startIndex..<content.endIndex, in: content)
+        if let match = Self.familyActionRegex.firstMatch(in: content, range: range2),
+           let jsonRange = Range(match.range(at: 1), in: content),
+           let fullRange = Range(match.range(at: 0), in: content) {
+            let json = String(content[jsonRange])
+            content = content.replacingCharacters(in: fullRange, with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if let data = json.data(using: .utf8), let action = try? JSONDecoder().decode(FamilyActionData.self, from: data) {
+                pendingFamilyAction = action
+            }
+        }
+
+        last.content = content
         last.isStreaming = false
         messages.append(last)
     }

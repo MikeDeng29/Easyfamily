@@ -4,6 +4,7 @@ import com.easyfamily.common.exception.BusinessException;
 import com.easyfamily.user.dto.UserProfileDtos.UpdateButlerRequest;
 import com.easyfamily.user.dto.UserProfileDtos.UserProfile;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
@@ -20,16 +21,26 @@ public class UserProfileService {
     private static final Set<String> VALID_BUTLER_PERSONAS = Set.of("warm", "strict", "humorous");
 
     private final JdbcTemplate jdbcTemplate;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserProfileService(JdbcTemplate jdbcTemplate) {
+    public UserProfileService(JdbcTemplate jdbcTemplate, PasswordEncoder passwordEncoder) {
         this.jdbcTemplate = jdbcTemplate;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public UserProfile getProfile(String userId, String loginPhone) {
         ensureSeeded(userId, loginPhone);
         return jdbcTemplate.queryForObject(
-                "SELECT user_id, phone, nickname, email, butler_name, butler_avatar_id, butler_persona FROM users WHERE user_id = ?",
+                "SELECT user_id, phone, nickname, email, butler_name, butler_avatar_id, butler_persona, password_hash, city FROM users WHERE user_id = ?",
                 (rs, rowNum) -> toUserProfile(rs),
+                userId
+        );
+    }
+
+    public void setPassword(String userId, String rawPassword) {
+        jdbcTemplate.update(
+                "UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?",
+                passwordEncoder.encode(rawPassword),
                 userId
         );
     }
@@ -43,6 +54,14 @@ public class UserProfileService {
         jdbcTemplate.update(
                 "UPDATE users SET email = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?",
                 email,
+                userId
+        );
+    }
+
+    public void updateCity(String userId, String city) {
+        jdbcTemplate.update(
+                "UPDATE users SET city = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?",
+                city,
                 userId
         );
     }
@@ -121,6 +140,9 @@ public class UserProfileService {
             butlerPersona = butlerPersona.toLowerCase();
         }
 
+        String passwordHash = rs.getString("password_hash");
+        boolean hasPassword = passwordHash != null && !passwordHash.isBlank();
+
         return new UserProfile(
                 rs.getString("user_id"),
                 rs.getString("phone"),
@@ -128,7 +150,9 @@ public class UserProfileService {
                 rs.getString("email"),
                 butlerName,
                 butlerAvatarId,
-                butlerPersona
+                butlerPersona,
+                hasPassword,
+                rs.getString("city")
         );
     }
 

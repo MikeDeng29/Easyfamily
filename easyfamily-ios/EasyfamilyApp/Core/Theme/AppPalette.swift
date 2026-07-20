@@ -18,6 +18,9 @@ enum AppPalette {
     static let textSecondary = Color(hex: 0x8A7F92)
     static let textOnPrimary = Color(hex: 0xFFFFFF)
 
+    static let green = Color(hex: 0x2E7D32)
+    static let softGreen = Color(hex: 0xE8F5E9)
+
     static let success = Color(hex: 0x4CAF50)
     static let error = Color(hex: 0xE53935)
 

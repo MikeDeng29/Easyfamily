@@ -1,0 +1,54 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'easyfamily-backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('easyfamily-backend/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-
+
+      - name: Build JAR
+        working-directory: easyfamily-backend
+        run: mvn -s settings.xml -DskipTests package
+
+      - name: Upload JAR to ECS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ECS_HOST }}
+          username: root
+          key: ${{ secrets.ECS_SSH_KEY }}
+          port: ${{ secrets.ECS_PORT }}
+          source: easyfamily-backend/target/easyfamily-backend-0.0.1-SNAPSHOT.jar
+          target: /opt/easyfamily/app/
+          strip_components: 2
+
+      - name: Restart service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ECS_HOST }}
+          username: root
+          key: ${{ secrets.ECS_SSH_KEY }}
+          port: ${{ secrets.ECS_PORT }}
+          script: |
+            systemctl restart easyfamily-backend
+            sleep 5
+            systemctl is-active easyfamily-backend

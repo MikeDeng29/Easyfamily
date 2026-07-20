@@ -5,6 +5,7 @@ struct MineView: View {
     @State private var showLogoutConfirm = false
     @State private var showFeedback = false
     @State private var showProfileEdit = false
+    @State private var showSetPassword = false
     @State private var phoneCount: Int?
     @State private var familyCount: Int?
     @State private var financeRole: String = "none"
@@ -24,6 +25,7 @@ struct MineView: View {
             Destination(id: "phone", title: "手机号", icon: "phone.fill", color: AppPalette.violet, background: AppPalette.softViolet),
             Destination(id: "vehicle", title: "车辆", icon: "car.fill", color: AppPalette.amber, background: AppPalette.softAmber),
             Destination(id: "bill", title: "账单", icon: "yensign.circle.fill", color: AppPalette.violet, background: AppPalette.softViolet),
+            Destination(id: "weekly_menu", title: "每周菜单", icon: "leaf.fill", color: Color(hex: 0x2E7D32), background: Color(hex: 0xE8F5E9)),
         ]
         if financeRole == "head" || financeRole == "viewer" {
             list.append(Destination(id: "finance", title: "财务健康", icon: "chart.xyaxis.line", color: AppPalette.violet, background: AppPalette.softViolet))
@@ -63,6 +65,12 @@ struct MineView: View {
                         } label: {
                             row(for: feedbackDestination)
                         }
+                        Divider().padding(.leading, 60)
+                        Button {
+                            showSetPassword = true
+                        } label: {
+                            passwordRow
+                        }
                     }
                     .background(AppPalette.surface)
                     .cornerRadius(16)
@@ -96,6 +104,7 @@ struct MineView: View {
                 case "assets": AssetListView()
                 case "liabilities": LiabilityListView()
                 case "finance_permissions": FinancePermissionView()
+                case "weekly_menu": WeeklyMenuView()
                 default: EmptyView()
                 }
             }
@@ -119,6 +128,27 @@ struct MineView: View {
                     userProfile = updated
                 }
                 .environmentObject(session)
+            }
+            .sheet(isPresented: $showSetPassword) {
+                if let token = session.accessToken {
+                    SetPasswordView(
+                        hasPassword: userProfile?.hasPassword == true,
+                        token: token,
+                        onSuccess: {
+                            userProfile = UserProfile(
+                                userId: userProfile?.userId ?? "",
+                                phone: userProfile?.phone,
+                                nickname: userProfile?.nickname,
+                                butlerName: userProfile?.butlerName,
+                                butlerAvatarId: userProfile?.butlerAvatarId,
+                                butlerPersona: userProfile?.butlerPersona,
+                                email: userProfile?.email,
+                                hasPassword: true,
+                                city: userProfile?.city
+                            )
+                        }
+                    )
+                }
             }
         }
     }
@@ -170,6 +200,36 @@ struct MineView: View {
             .padding(.horizontal, 16)
         }
         .buttonStyle(.plain)
+    }
+
+    private var passwordRow: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(AppPalette.violet)
+                .frame(width: 32, height: 32)
+                .background(AppPalette.softViolet)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            Text(userProfile?.hasPassword == true ? "修改登录密码" : "设置登录密码")
+                .foregroundColor(AppPalette.textPrimary)
+
+            Spacer()
+
+            if userProfile?.hasPassword == true {
+                Text("已设置")
+                    .font(.caption)
+                    .foregroundColor(AppPalette.textSecondary)
+                    .padding(.trailing, 4)
+            }
+
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(AppPalette.textSecondary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
     }
 
     private func row(for destination: Destination) -> some View {

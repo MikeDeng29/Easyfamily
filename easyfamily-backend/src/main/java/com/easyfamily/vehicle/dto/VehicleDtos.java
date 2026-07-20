@@ -84,4 +84,22 @@ public final class VehicleDtos {
             long totalItems,
             List<CategoryStat> byCategory
     ) {}
+
+    public record MaintenanceImportItemResult(
+            String category,
+            String itemName,
+            Double cost
+    ) {}
+
+    public record MaintenanceImportResult(
+            String plateNumber,
+            String brand,
+            String model,
+            Integer year,
+            String serviceDate,
+            Integer mileageKm,
+            String shopName,
+            String notes,
+            List<MaintenanceImportItemResult> items
+    ) {}
 }

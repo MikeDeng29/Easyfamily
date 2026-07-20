@@ -3,8 +3,10 @@ import SwiftUI
 struct ChatView: View {
     @EnvironmentObject private var session: AuthSession
     @StateObject private var viewModel = ChatViewModel()
+    @StateObject private var voiceManager = VoiceInputManager()
     @FocusState private var inputFocused: Bool
     @FocusState private var nicknameFocused: Bool
+    @State private var micPulse = false
 
     private let suggestions: [(icon: String, text: String)] = [
         ("yensign.circle.fill", "帮我记一笔账"),
@@ -35,6 +37,9 @@ struct ChatView: View {
                             }
                             if let action = viewModel.pendingBillAction {
                                 billActionCard(action)
+                            }
+                            if let action = viewModel.pendingFamilyAction {
+                                familyActionCard(action)
                             }
                         }
                         .padding(16)
@@ -332,6 +337,13 @@ struct ChatView: View {
             .padding(12)
             .background(message.role == "user" ? AppPalette.bubbleUser : AppPalette.bubbleAi)
             .cornerRadius(12)
+            .contextMenu {
+                Button {
+                    UIPasteboard.general.string = message.content.strippingSMPEmoji
+                } label: {
+                    Label("复制", systemImage: "doc.on.doc")
+                }
+            }
 
             if message.role == "user" { avatar(systemImage: "person.fill", color: AppPalette.coral) }
             if message.role != "user" { Spacer(minLength: 40) }
@@ -377,8 +389,78 @@ struct ChatView: View {
         .cornerRadius(14)
     }
 
+    private func familyActionCard(_ action: FamilyActionData) -> some View {
+        let isAdd = action.action == "add"
+        let accentColor = isAdd ? Color(red: 0.2, green: 0.7, blue: 0.4) : AppPalette.coral
+        let icon = isAdd ? "person.badge.plus" : "person.badge.minus"
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .foregroundColor(accentColor)
+                Text(isAdd ? "添加家庭成员？" : "移除家庭成员？")
+                    .font(.subheadline.bold())
+            }
+            Text("姓名：\(action.name)　关系：\(action.relation)")
+                .font(.footnote)
+            if isAdd, let phone = action.phone {
+                Text("手机号：\(phone)")
+                    .font(.footnote)
+            }
+            HStack {
+                Button("取消") { viewModel.dismissFamilyAction() }
+                    .buttonStyle(.plain)
+                    .foregroundColor(AppPalette.textSecondary)
+                Spacer()
+                Button(isAdd ? "确认添加" : "确认移除") {
+                    if let token = session.accessToken {
+                        viewModel.confirmFamilyAction(token: token)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(accentColor)
+            }
+        }
+        .padding(12)
+        .background(accentColor.opacity(0.1))
+        .cornerRadius(14)
+    }
+
     private var inputBar: some View {
         HStack(spacing: 10) {
+            // Mic button
+            Button {
+                if voiceManager.isRecording {
+                    voiceManager.stop()
+                } else {
+                    inputFocused = false
+                    voiceManager.toggle { transcript in
+                        viewModel.input = transcript
+                    }
+                }
+            } label: {
+                ZStack {
+                    if voiceManager.isRecording {
+                        Circle()
+                            .fill(AppPalette.coral.opacity(0.2))
+                            .frame(width: 40, height: 40)
+                            .scaleEffect(micPulse ? 1.4 : 1.0)
+                    }
+                    Image(systemName: voiceManager.isRecording ? "waveform" : "mic.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(voiceManager.isRecording ? AppPalette.coral : AppPalette.softCoral)
+                        .frame(width: 40, height: 40)
+                }
+            }
+            .onChange(of: voiceManager.isRecording) { _, recording in
+                if recording {
+                    withAnimation(.easeInOut(duration: 0.65).repeatForever(autoreverses: true)) {
+                        micPulse = true
+                    }
+                } else {
+                    withAnimation(.default) { micPulse = false }
+                }
+            }
+
             TextField("输入或说出你的问题...", text: $viewModel.input)
                 .focused($inputFocused)
                 .padding(12)
@@ -386,8 +468,15 @@ struct ChatView: View {
                 .cornerRadius(20)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
-                        .strokeBorder(inputFocused ? AppPalette.coral : .clear, lineWidth: 1.5)
+                        .strokeBorder(
+                            voiceManager.isRecording ? AppPalette.coral :
+                            (inputFocused ? AppPalette.coral : .clear),
+                            lineWidth: 1.5
+                        )
                 )
+                .onChange(of: inputFocused) { _, focused in
+                    if focused && voiceManager.isRecording { voiceManager.stop() }
+                }
 
             Button {
                 if let token = session.accessToken {

@@ -2,6 +2,7 @@ package com.easyfamily.security;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -33,7 +34,6 @@ public class TokenBlacklistService {
         if (token == null || token.isBlank() || expireAt == null) {
             return;
         }
-        cleanupExpired();
         jdbcTemplate.update(
                 """
                         INSERT INTO token_blacklist(token, expire_at, created_at)
@@ -49,7 +49,6 @@ public class TokenBlacklistService {
         if (token == null || token.isBlank()) {
             return false;
         }
-        cleanupExpired();
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(1) FROM token_blacklist WHERE token = ? AND expire_at > CURRENT_TIMESTAMP",
                 Integer.class,
@@ -58,7 +57,8 @@ public class TokenBlacklistService {
         return count != null && count > 0;
     }
 
-    private void cleanupExpired() {
+    @Scheduled(fixedDelay = 3_600_000) // every hour
+    public void cleanupExpired() {
         jdbcTemplate.update("DELETE FROM token_blacklist WHERE expire_at <= CURRENT_TIMESTAMP");
     }
 }

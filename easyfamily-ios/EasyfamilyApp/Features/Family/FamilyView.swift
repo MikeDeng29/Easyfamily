@@ -6,29 +6,41 @@ struct FamilyView: View {
     @State private var showAddMember = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+        List {
+            Section {
                 Text("统一管理家庭成员，便于查询和财务汇总。")
                     .font(.subheadline)
                     .foregroundColor(AppPalette.textSecondary)
-                    .padding(.bottom, 4)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+            }
 
-                if viewModel.loading {
-                    ProgressView().padding(.top, 8)
-                } else {
+            if viewModel.loading {
+                Section {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .listRowBackground(Color.clear)
+                }
+            } else {
+                Section {
                     ForEach(viewModel.members) { member in
                         memberRow(member)
-                    }
-
-                    if let error = viewModel.error {
-                        Text(error)
-                            .font(.caption)
-                            .foregroundColor(AppPalette.error)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                            .listRowBackground(Color.clear)
                     }
                 }
             }
-            .padding(16)
+
+            if let error = viewModel.error {
+                Section {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(AppPalette.error)
+                        .listRowBackground(Color.clear)
+                }
+            }
         }
+        .listStyle(.plain)
         .background(AppPalette.background)
         .navigationTitle("大家庭")
         .toolbar {

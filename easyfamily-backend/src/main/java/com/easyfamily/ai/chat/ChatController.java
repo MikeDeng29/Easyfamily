@@ -4,6 +4,7 @@ import com.easyfamily.ai.llm.LlmProvider;
 import com.easyfamily.ai.memory.UserMemoryService;
 import com.easyfamily.asset.service.AssetService;
 import com.easyfamily.bill.service.BillService;
+import com.easyfamily.family.service.FamilyMemberService;
 import com.easyfamily.liability.service.LiabilityService;
 import com.easyfamily.security.AuthContext;
 import com.easyfamily.user.dto.UserProfileDtos.UserProfile;
@@ -44,6 +45,7 @@ public class ChatController {
     private final BillService billService;
     private final AssetService assetService;
     private final LiabilityService liabilityService;
+    private final FamilyMemberService familyMemberService;
     private final PromptProperties prompts;
     private final ObjectMapper objectMapper;
     private final ExecutorService executor = Executors.newCachedThreadPool();
@@ -51,6 +53,7 @@ public class ChatController {
     public ChatController(LlmProvider llmProvider, UserMemoryService userMemoryService,
                            UserProfileService userProfileService, BillService billService,
                            AssetService assetService, LiabilityService liabilityService,
+                           FamilyMemberService familyMemberService,
                            PromptProperties prompts, ObjectMapper objectMapper) {
         this.llmProvider = llmProvider;
         this.userMemoryService = userMemoryService;
@@ -58,6 +61,7 @@ public class ChatController {
         this.billService = billService;
         this.assetService = assetService;
         this.liabilityService = liabilityService;
+        this.familyMemberService = familyMemberService;
         this.prompts = prompts;
         this.objectMapper = objectMapper;
     }
@@ -73,11 +77,27 @@ public class ChatController {
         List<String> memories = userMemoryService.relevantForPrompt(currentUser.userId(), userMessage, 20);
         StringBuilder contextBuilder = new StringBuilder();
         if (!memories.isEmpty()) {
-            contextBuilder.append("[关于该用户的已知记忆，可用于个性化回复，不要逐字复述给用户：\n");
+            contextBuilder.append("[AI对话笔记（非系统数据库记录，仅供个性化参考，不代表用户在系统中的实际状态，不要以此为依据告知用户他们的家庭成员、资产等系统状态，不要逐字引用以上笔记内容）：\n");
             for (String memory : memories) {
                 contextBuilder.append("- ").append(memory).append("\n");
             }
             contextBuilder.append("]\n");
+        }
+
+        // Inject actual family members from database (authoritative)
+        try {
+            var familyMembers = familyMemberService.listMembers(currentUser.userId());
+            if (!familyMembers.isEmpty()) {
+                contextBuilder.append("[家庭成员（系统数据库，权威数据）：\n");
+                for (var m : familyMembers) {
+                    contextBuilder.append("  - ").append(m.name())
+                            .append("，关系：").append(m.relation())
+                            .append("，手机号：").append(maskPhone(m.phone())).append("\n");
+                }
+                contextBuilder.append("]\n");
+            }
+        } catch (Exception e) {
+            log.debug("Could not load family members for user {}: {}", currentUser.userId(), e.getMessage());
         }
 
         // Inject current-month bill summary so the AI can answer spending queries
@@ -131,7 +151,7 @@ public class ChatController {
         }
 
         contextBuilder.append("[用户ID: ").append(currentUser.userId())
-                .append(", 当前手机号: ").append(currentUser.phone());
+                .append(", 当前手机号: ").append(maskPhone(currentUser.phone()));
         if (profile.nickname() != null && !profile.nickname().isBlank()) {
             contextBuilder.append(", 用户昵称: ").append(profile.nickname());
         }
@@ -160,6 +180,11 @@ public class ChatController {
         return emitter;
     }
 
+    private static String maskPhone(String phone) {
+        if (phone == null || phone.length() != 11) return phone;
+        return phone.substring(0, 3) + "****" + phone.substring(7);
+    }
+
     /**
      * Builds the per-request system prompt, customizing the opening self-identification
      * sentence with the user's chosen butler name (falling back to "青鸟管家" for the
@@ -183,6 +208,7 @@ public class ChatController {
                 + prompts.getCapabilities() + "\n"
                 + prompts.getModuleVehicle() + "\n"
                 + prompts.getModuleBill() + "\n"
+                + prompts.getModuleFamily() + "\n"
                 + prompts.getModuleMemory() + "\n"
                 + prompts.getToneFooter() + "\n"
                 + personaInstruction;

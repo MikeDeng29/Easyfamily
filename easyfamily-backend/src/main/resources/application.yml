@@ -38,8 +38,8 @@ server:
 easyfamily:
   security:
     jwt-secret: ${EASYFAMILY_JWT_SECRET:replace-with-strong-secret-replace-with-strong-secret}
-    access-token-minutes: 30
-    refresh-token-days: 7
+    access-token-minutes: 60
+    refresh-token-days: 30
     admin-username: admin
     admin-password: ${EASYFAMILY_ADMIN_PASSWORD:Trump@666}
   query:

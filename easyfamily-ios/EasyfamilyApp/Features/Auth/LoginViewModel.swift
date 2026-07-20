@@ -1,8 +1,14 @@
 import Foundation
 import Combine
 
+enum LoginMode: String, CaseIterable {
+    case sms = "验证码"
+    case password = "密码"
+}
+
 @MainActor
 final class LoginViewModel: ObservableObject {
+    @Published var loginMode: LoginMode = .sms
     @Published var phone: String = "" {
         didSet {
             let filtered = String(phone.filter(\.isNumber).prefix(11))
@@ -15,9 +21,8 @@ final class LoginViewModel: ObservableObject {
             if filtered != smsCode { smsCode = filtered }
         }
     }
+    @Published var password: String = ""
     @Published var captchaToken: String = ""
-    /// Set when the backend flags this request as risky and requires a slide captcha
-    /// before it will send another SMS code.
     @Published var captchaRequired: Bool = false
     @Published var smsCooldownSeconds: Int = 0
     @Published var loading: Bool = false
@@ -32,7 +37,12 @@ final class LoginViewModel: ObservableObject {
     var canSendSms: Bool {
         isPhoneValid && smsCooldownSeconds == 0 && !loading && (!captchaRequired || isCaptchaVerified)
     }
-    var canLogin: Bool { isPhoneValid && isSmsCodeValid && !loading }
+    var canLogin: Bool {
+        switch loginMode {
+        case .sms: return isPhoneValid && isSmsCodeValid && !loading
+        case .password: return isPhoneValid && password.count >= 6 && !loading
+        }
+    }
 
     func onCaptchaSuccess(_ token: String) {
         captchaToken = token
@@ -68,6 +78,13 @@ final class LoginViewModel: ObservableObject {
     }
 
     func login(session: AuthSession) async {
+        switch loginMode {
+        case .sms: await loginWithSms(session: session)
+        case .password: await loginWithPassword(session: session)
+        }
+    }
+
+    private func loginWithSms(session: AuthSession) async {
         guard canLogin else { return }
         loading = true
         defer { loading = false }
@@ -76,6 +93,24 @@ final class LoginViewModel: ObservableObject {
             info = "登录成功"
             infoIsError = false
             session.login(userId: result.userId, accessToken: result.accessToken, refreshToken: result.refreshToken)
+        } catch {
+            info = "登录失败：\(error.localizedDescription)"
+            infoIsError = true
+        }
+    }
+
+    private func loginWithPassword(session: AuthSession) async {
+        guard canLogin else { return }
+        loading = true
+        defer { loading = false }
+        do {
+            let result = try await APIService.loginWithPassword(phone: phone, password: password)
+            info = "登录成功"
+            infoIsError = false
+            session.login(userId: result.userId, accessToken: result.accessToken, refreshToken: result.refreshToken)
+        } catch let error as ApiError where error.code == "PASSWORD_NOT_SET" {
+            info = "该账号尚未设置密码，请使用验证码登录"
+            infoIsError = true
         } catch {
             info = "登录失败：\(error.localizedDescription)"
             infoIsError = true

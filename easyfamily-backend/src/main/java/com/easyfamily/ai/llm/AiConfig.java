@@ -2,6 +2,7 @@ package com.easyfamily.ai.llm;
 
 import com.easyfamily.ai.chat.PromptProperties;
 import com.easyfamily.ai.embedding.QwenEmbeddingProvider;
+import com.easyfamily.vehicle.service.VehicleImportService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -84,6 +85,14 @@ public class AiConfig {
             ObjectMapper objectMapper
     ) {
         return new QwenEmbeddingProvider(llmRestTemplate, objectMapper, qwenApiKey, qwenEmbeddingModel);
+    }
+
+    @Bean
+    public VehicleImportService vehicleImportService(
+            @org.springframework.beans.factory.annotation.Qualifier("llmRestTemplate") RestTemplate llmRestTemplate,
+            ObjectMapper objectMapper
+    ) {
+        return new VehicleImportService(llmRestTemplate, objectMapper, claudeApiKey);
     }
 
     @Bean

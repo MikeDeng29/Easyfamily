@@ -54,6 +54,15 @@ enum APIService {
         return result
     }
 
+    static func loginWithPassword(phone: String, password: String) async throws -> LoginResponse {
+        guard let result: LoginResponse = try await client.request(
+            "/api/v1/auth/login/password", method: "POST", body: PasswordLoginRequest(phone: phone, password: password)
+        ) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
     static func refreshToken(refreshToken: String) async throws -> RefreshTokenResponse {
         guard let result: RefreshTokenResponse = try await client.request(
             "/api/v1/auth/refresh", method: "POST", body: RefreshTokenRequest(refreshToken: refreshToken)
@@ -93,6 +102,29 @@ enum APIService {
     static func updateButler(token: String, request: UpdateButlerRequest) async throws -> UserProfile {
         guard let result: UserProfile = try await client.request(
             "/api/v1/user/butler", method: "PUT", token: token, body: request
+        ) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
+    static func setPassword(token: String, newPassword: String) async throws {
+        let _: EmptyValue? = try await client.request(
+            "/api/v1/user/password", method: "PUT", token: token, body: SetPasswordRequest(newPassword: newPassword)
+        )
+    }
+
+    static func updateCity(token: String, city: String) async throws {
+        let _: EmptyValue? = try await client.request(
+            "/api/v1/user/city", method: "PATCH", token: token, body: UpdateCityRequest(city: city)
+        )
+    }
+
+    // MARK: - Weekly Menu
+
+    static func weeklyMenu(token: String) async throws -> WeeklyMenuResponse {
+        guard let result: WeeklyMenuResponse = try await client.request(
+            "/api/v1/menu/weekly", method: "GET", token: token
         ) else {
             throw ApiError(message: "empty response")
         }
@@ -245,6 +277,41 @@ enum APIService {
 
     static func getVehicleStats(token: String, vehicleId: Int64) async throws -> VehicleStatsDto {
         guard let result: VehicleStatsDto = try await client.request("/api/v1/vehicles/\(vehicleId)/stats", method: "GET", token: token) else {
+            throw ApiError(message: "empty response")
+        }
+        return result
+    }
+
+    static func importMaintenanceRecord(token: String, imageData: Data, mimeType: String) async throws -> MaintenanceImportResult {
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"image\"; filename=\"maintenance.jpg\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        body.append(imageData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+
+        guard let url = URL(string: Config.apiBaseURL + "/api/v1/vehicles/import-record") else {
+            throw ApiError(message: "invalid URL")
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = body
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw ApiError(message: "no HTTP response")
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            throw ApiError(message: "HTTP \(http.statusCode)")
+        }
+        let envelope = try JSONDecoder().decode(ApiResponse<MaintenanceImportResult>.self, from: data)
+        guard envelope.code == "OK" else {
+            throw ApiError(code: envelope.code, message: envelope.message ?? envelope.code)
+        }
+        guard let result = envelope.data else {
             throw ApiError(message: "empty response")
         }
         return result

@@ -91,6 +91,21 @@ struct UserProfile: Decodable {
     let butlerAvatarId: Int?
     let butlerPersona: String?
     let email: String?
+    let hasPassword: Bool?
+    let city: String?
+}
+
+struct UpdateCityRequest: Encodable {
+    let city: String
+}
+
+struct PasswordLoginRequest: Encodable {
+    let phone: String
+    let password: String
+}
+
+struct SetPasswordRequest: Encodable {
+    let newPassword: String
 }
 
 struct UpdateNicknameRequest: Encodable {
@@ -288,6 +303,24 @@ struct VehicleStatsDto: Decodable {
     let byCategory: [CategoryStatDto]
 }
 
+struct MaintenanceImportResult: Codable {
+    let plateNumber: String?
+    let brand: String?
+    let model: String?
+    let year: Int?
+    let serviceDate: String?   // "YYYY-MM-DD"
+    let mileageKm: Int?
+    let shopName: String?
+    let notes: String?
+    let items: [MaintenanceImportItemResult]
+}
+
+struct MaintenanceImportItemResult: Codable {
+    let category: String
+    let itemName: String
+    let cost: Double?
+}
+
 // MARK: - Feedback
 
 struct FeedbackRequest: Encodable {
@@ -300,6 +333,13 @@ struct FeedbackRequest: Encodable {
 
 struct ChatRequest: Encodable {
     let message: String
+}
+
+struct FamilyActionData: Decodable {
+    let action: String   // "add" or "delete"
+    let name: String
+    let phone: String?   // present for "add" only
+    let relation: String
 }
 
 struct BillActionData: Decodable {
@@ -375,6 +415,24 @@ struct PermissionListResponse: Codable {
 
 struct GrantPermissionRequest: Encodable {
     let phone: String
+}
+
+// MARK: - Weekly Menu
+
+struct WeeklyMenuResponse: Decodable {
+    let weekOf: String
+    let city: String
+    let days: [DayMenuDto]
+    let seasonTip: String
+}
+
+struct DayMenuDto: Decodable {
+    let date: String
+    let dayLabel: String
+    let breakfast: String
+    let lunch: String
+    let dinner: String
+    let keyVegetables: [String]
 }
 
 // MARK: - Family Finance

@@ -1,4 +1,6 @@
 import SwiftUI
+import PhotosUI
+import UIKit
 
 struct RecordFormView: View {
     @EnvironmentObject private var session: AuthSession
@@ -18,6 +20,12 @@ struct RecordFormView: View {
     @State private var newItemName: String = ""
     @State private var newItemCost: String = ""
 
+    // Import from maintenance slip
+    @State private var showingImagePicker = false
+    @State private var selectedPhoto: PhotosPickerItem? = nil
+    @State private var isImporting = false
+    @State private var importError: String? = nil
+
     private var isDateValid: Bool {
         serviceDate.range(of: #"^\d{4}-\d{2}-\d{2}$"#, options: .regularExpression) != nil
     }
@@ -26,6 +34,22 @@ struct RecordFormView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    if isImporting {
+                        HStack {
+                            ProgressView()
+                            Text("正在识别保养单...").foregroundColor(.secondary)
+                        }
+                    } else {
+                        Button {
+                            showingImagePicker = true
+                        } label: {
+                            Label("从保养单导入", systemImage: "doc.viewfinder")
+                        }
+                        .disabled(isImporting)
+                    }
+                }
+
                 Section("基本信息") {
                     TextField("服务日期 YYYY-MM-DD", text: $serviceDate)
                         .onChange(of: serviceDate) { serviceDate = String(serviceDate.prefix(10)) }
@@ -95,6 +119,56 @@ struct RecordFormView: View {
                     }
                     .disabled(!canSave)
                 }
+            }
+            .photosPicker(isPresented: $showingImagePicker, selection: $selectedPhoto, matching: .images)
+            .onChange(of: selectedPhoto) {
+                guard let photo = selectedPhoto else { return }
+                isImporting = true
+                importError = nil
+                Task {
+                    defer { isImporting = false }
+                    do {
+                        guard let data = try await photo.loadTransferable(type: Data.self) else { return }
+                        let imageData: Data
+                        if data.count > 1_000_000,
+                           let uiImage = UIImage(data: data),
+                           let compressed = uiImage.jpegData(compressionQuality: 0.8) {
+                            imageData = compressed
+                        } else {
+                            imageData = data
+                        }
+                        guard let token = session.accessToken else {
+                            throw ApiError(message: "未登录")
+                        }
+                        let result = try await APIService.importMaintenanceRecord(
+                            token: token, imageData: imageData, mimeType: "image/jpeg"
+                        )
+                        if let d = result.serviceDate { serviceDate = d }
+                        if let m = result.mileageKm { mileageKm = String(m) }
+                        if let s = result.shopName { shopName = s }
+                        if let n = result.notes { notes = n }
+                        for item in result.items {
+                            let cat = Self.categories.contains(item.category) ? item.category : "其他"
+                            let cost = item.cost.map { String(format: "%.2f", $0) } ?? ""
+                            items.append(MaintenanceItemInput(
+                                category: cat,
+                                itemName: item.itemName,
+                                cost: Double(cost) ?? 0,
+                                isDiy: false
+                            ))
+                        }
+                    } catch {
+                        importError = error.localizedDescription
+                    }
+                }
+            }
+            .alert("导入失败", isPresented: Binding(
+                get: { importError != nil },
+                set: { if !$0 { importError = nil } }
+            )) {
+                Button("确定", role: .cancel) {}
+            } message: {
+                Text(importError ?? "")
             }
         }
     }

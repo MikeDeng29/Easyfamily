@@ -9,6 +9,7 @@ struct ProfileEditView: View {
 
     @State private var nickname: String = ""
     @State private var email: String = ""
+    @State private var city: String = ""
     @State private var butlerName: String = ""
     @State private var butlerAvatarId: Int = 1
     @State private var butlerPersona: String = "warm"
@@ -52,6 +53,11 @@ struct ProfileEditView: View {
                                 .keyboardType(.emailAddress)
                                 .textContentType(.emailAddress)
                                 .autocapitalization(.none)
+                        }
+                        Divider().padding(.leading, 60)
+                        formRow(label: "所在城市", icon: "mappin.circle.fill") {
+                            TextField("如：上海、北京", text: $city)
+                                .multilineTextAlignment(.trailing)
                         }
                     }
                     .background(AppPalette.surface)
@@ -186,6 +192,7 @@ struct ProfileEditView: View {
         .onAppear {
             nickname = profile?.nickname ?? ""
             email = profile?.email ?? ""
+            city = profile?.city ?? ""
             butlerName = profile?.butlerName ?? ""
             butlerAvatarId = profile?.butlerAvatarId ?? 1
             butlerPersona = profile?.butlerPersona ?? "warm"
@@ -235,12 +242,16 @@ struct ProfileEditView: View {
 
             let trimmedNickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
             let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmedCity = city.trimmingCharacters(in: .whitespacesAndNewlines)
 
             if !trimmedNickname.isEmpty, trimmedNickname != profile?.nickname {
                 updated = try await APIService.updateNickname(token: token, nickname: trimmedNickname)
             }
             if trimmedEmail != (profile?.email ?? "") {
                 updated = try await APIService.updateEmail(token: token, email: trimmedEmail)
+            }
+            if trimmedCity != (profile?.city ?? "") {
+                try await APIService.updateCity(token: token, city: trimmedCity)
             }
 
             let effectiveName = {

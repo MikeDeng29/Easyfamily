@@ -31,7 +31,8 @@ final class AuthSession: ObservableObject {
     }
 
     /// Refreshes the access token using the stored refresh token.
-    /// Returns the new access token on success; calls logout() and returns nil on failure.
+    /// Logs out only when the refresh token is confirmed invalid (401 or token-revoked error).
+    /// Transient network or server errors leave the existing session intact.
     @discardableResult
     func refreshAccessToken() async -> String? {
         guard let rt = refreshToken else { logout(); return nil }
@@ -44,9 +45,18 @@ final class AuthSession: ObservableObject {
             }
             tokenStore.save(result.accessToken)
             return result.accessToken
+        } catch let error as ApiError {
+            if isTokenInvalidError(error) { logout() }
+            return nil
         } catch {
-            logout()
+            // Network / URLSession errors — keep session alive
             return nil
         }
+    }
+
+    private func isTokenInvalidError(_ error: ApiError) -> Bool {
+        if error.message.contains("401") { return true }
+        let invalidCodes = ["TOKEN_REVOKED", "TOKEN_EXPIRED", "INVALID_TOKEN", "UNAUTHORIZED"]
+        return invalidCodes.contains(error.code ?? "")
     }
 }

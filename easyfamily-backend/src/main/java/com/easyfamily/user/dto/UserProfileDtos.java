@@ -16,7 +16,20 @@ public final class UserProfileDtos {
             String email,
             String butlerName,
             Integer butlerAvatarId,
-            String butlerPersona
+            String butlerPersona,
+            boolean hasPassword,
+            String city
+    ) {
+    }
+
+    public record UpdateCityRequest(
+            @Size(max = 50) String city
+    ) {
+    }
+
+    public record SetPasswordRequest(
+            @NotBlank @Size(min = 6, max = 20, message = "密码长度须在 6-20 位之间")
+            String newPassword
     ) {
     }
 

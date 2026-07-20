@@ -24,6 +24,16 @@ targets:
       properties:
         CFBundleDisplayName: easyfamily
         UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
         NSAppTransportSecurity:
@@ -35,7 +45,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.easyfamily.ios
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        DEVELOPMENT_TEAM: 836GW6C7ZQ
+        DEVELOPMENT_TEAM: 7BK7GP7V5N
         CODE_SIGN_STYLE: Automatic
 
   EasyfamilyAppUITests:
@@ -47,7 +57,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.easyfamily.ios.uitests
-        DEVELOPMENT_TEAM: 836GW6C7ZQ
+        DEVELOPMENT_TEAM: 7BK7GP7V5N
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: EasyfamilyApp

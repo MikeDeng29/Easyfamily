@@ -4,6 +4,7 @@ import com.easyfamily.auth.dto.AuthDtos.CaptchaVerifyRequest;
 import com.easyfamily.auth.dto.AuthDtos.AdminLoginRequest;
 import com.easyfamily.auth.dto.AuthDtos.LoginRequest;
 import com.easyfamily.auth.dto.AuthDtos.LoginResponse;
+import com.easyfamily.auth.dto.AuthDtos.PasswordLoginRequest;
 import com.easyfamily.auth.dto.AuthDtos.RefreshRequest;
 import com.easyfamily.auth.dto.AuthDtos.RefreshResponse;
 import com.easyfamily.auth.dto.AuthDtos.SlideCaptchaInitRequest;
@@ -16,6 +17,7 @@ import com.easyfamily.security.TokenBlacklistService;
 import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -45,9 +47,9 @@ public class AuthService {
     private final LoginAuditLogService loginAuditLogService;
     private final JdbcTemplate jdbcTemplate;
     private final SmsSender smsSender;
+    private final PasswordEncoder passwordEncoder;
     private final String adminUsername;
     private final String adminPassword;
-
     private final String mockSmsCode;
 
     public AuthService(
@@ -56,6 +58,7 @@ public class AuthService {
             LoginAuditLogService loginAuditLogService,
             JdbcTemplate jdbcTemplate,
             SmsSender smsSender,
+            PasswordEncoder passwordEncoder,
             @Value("${easyfamily.security.admin-username:admin}") String adminUsername,
             @Value("${easyfamily.security.admin-password:change-me-in-vault}") String adminPassword,
             @Value("${easyfamily.sms.mock-code:}") String mockSmsCode
@@ -65,6 +68,7 @@ public class AuthService {
         this.loginAuditLogService = loginAuditLogService;
         this.jdbcTemplate = jdbcTemplate;
         this.smsSender = smsSender;
+        this.passwordEncoder = passwordEncoder;
         this.adminUsername = adminUsername;
         this.adminPassword = adminPassword;
         this.mockSmsCode = mockSmsCode;
@@ -262,6 +266,30 @@ public class AuthService {
             );
         } catch (BusinessException ex) {
             loginAuditLogService.record("USER_PHONE", request.phone(), "FAIL", ex.getCode(), clientIp, userAgent);
+            throw ex;
+        }
+    }
+
+    public LoginResponse loginWithPassword(PasswordLoginRequest request, String clientIp, String userAgent) {
+        try {
+            List<String> hashes = jdbcTemplate.query(
+                    "SELECT password_hash FROM users WHERE phone = ?",
+                    (rs, rn) -> rs.getString("password_hash"),
+                    request.phone()
+            );
+            if (hashes.isEmpty() || hashes.get(0) == null || hashes.get(0).isBlank()) {
+                throw new BusinessException("PASSWORD_NOT_SET", "no password has been set for this account");
+            }
+            if (!passwordEncoder.matches(request.password(), hashes.get(0))) {
+                throw new BusinessException("INVALID_PASSWORD", "incorrect phone or password");
+            }
+            String userId = "U" + request.phone();
+            String accessToken = jwtService.issueAccessToken(userId, request.phone());
+            String refreshToken = jwtService.issueRefreshToken(userId, request.phone());
+            loginAuditLogService.record("USER_PASSWORD", request.phone(), "SUCCESS", null, clientIp, userAgent);
+            return new LoginResponse(userId, accessToken, refreshToken);
+        } catch (BusinessException ex) {
+            loginAuditLogService.record("USER_PASSWORD", request.phone(), "FAIL", ex.getCode(), clientIp, userAgent);
             throw ex;
         }
     }

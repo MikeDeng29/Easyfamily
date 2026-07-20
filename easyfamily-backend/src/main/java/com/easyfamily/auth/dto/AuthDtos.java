@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import jakarta.validation.Valid;
 
 import java.util.List;
@@ -65,6 +66,13 @@ public final class AuthDtos {
     public record AdminLoginRequest(
             @NotBlank String username,
             @NotBlank String password
+    ) {
+    }
+
+    public record PasswordLoginRequest(
+            @Pattern(regexp = "^1\\d{10}$", message = "invalid mainland phone format")
+            String phone,
+            @NotBlank @Size(min = 6, max = 20) String password
     ) {
     }
 

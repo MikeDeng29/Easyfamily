@@ -19,22 +19,34 @@ struct LoginView: View {
                         brandHeader
 
                         VStack(alignment: .leading, spacing: 16) {
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: 8) {
                                 Text("手机号登录")
                                     .font(.title3.bold())
                                     .foregroundColor(AppPalette.textPrimary)
                                 Text("未注册的手机号将自动创建账号")
                                     .font(.caption)
                                     .foregroundColor(AppPalette.textSecondary)
+
+                                Picker("登录方式", selection: $viewModel.loginMode) {
+                                    ForEach(LoginMode.allCases, id: \.self) { mode in
+                                        Text(mode.rawValue).tag(mode)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+                                .padding(.top, 4)
                             }
 
                             phoneField
 
-                            captchaSection
-                                .id("captcha")
-                                .animation(.easeInOut(duration: 0.25), value: viewModel.captchaRequired)
+                            if viewModel.loginMode == .sms {
+                                captchaSection
+                                    .id("captcha")
+                                    .animation(.easeInOut(duration: 0.25), value: viewModel.captchaRequired)
 
-                            smsRow
+                                smsRow
+                            } else {
+                                passwordField
+                            }
 
                             VStack(spacing: 8) {
                                 Button {
@@ -46,7 +58,8 @@ struct LoginView: View {
                                 .opacity(viewModel.canLogin ? 1 : 0.5)
 
                                 if !viewModel.canLogin && !viewModel.loading && !viewModel.phone.isEmpty {
-                                    Text("请先完成手机号与验证码填写")
+                                    let hint = viewModel.loginMode == .sms ? "请先完成手机号与验证码填写" : "请输入手机号和密码（至少6位）"
+                                    Text(hint)
                                         .font(.caption2)
                                         .foregroundColor(AppPalette.textSecondary)
                                 }
@@ -173,6 +186,20 @@ struct LoginView: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
+    }
+
+    @FocusState private var passwordFocused: Bool
+
+    private var passwordField: some View {
+        SecureField("密码（至少 6 位）", text: $viewModel.password)
+            .focused($passwordFocused)
+            .padding(12)
+            .background(AppPalette.background)
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(passwordFocused ? AppPalette.coral : .clear, lineWidth: 1.5)
+            )
     }
 
     private var smsRow: some View {

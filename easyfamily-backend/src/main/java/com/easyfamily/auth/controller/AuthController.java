@@ -5,6 +5,7 @@ import com.easyfamily.auth.dto.AuthDtos.AdminLoginRequest;
 import com.easyfamily.auth.dto.AuthDtos.LoginRequest;
 import com.easyfamily.auth.dto.AuthDtos.LoginResponse;
 import com.easyfamily.auth.dto.AuthDtos.LogoutRequest;
+import com.easyfamily.auth.dto.AuthDtos.PasswordLoginRequest;
 import com.easyfamily.auth.dto.AuthDtos.RefreshRequest;
 import com.easyfamily.auth.dto.AuthDtos.RefreshResponse;
 import com.easyfamily.auth.dto.AuthDtos.SlideCaptchaInitRequest;
@@ -58,6 +59,11 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpServletRequest) {
         return ApiResponse.ok(authService.login(request, resolveClientIp(httpServletRequest), resolveUserAgent(httpServletRequest)));
+    }
+
+    @PostMapping("/login/password")
+    public ApiResponse<LoginResponse> loginWithPassword(@Valid @RequestBody PasswordLoginRequest request, HttpServletRequest httpServletRequest) {
+        return ApiResponse.ok(authService.loginWithPassword(request, resolveClientIp(httpServletRequest), resolveUserAgent(httpServletRequest)));
     }
 
     @PostMapping("/admin/login")

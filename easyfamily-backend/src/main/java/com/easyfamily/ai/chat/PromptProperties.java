@@ -14,6 +14,7 @@ public class PromptProperties {
     private String capabilities;
     private String moduleVehicle;
     private String moduleBill;
+    private String moduleFamily;
     private String moduleMemory;
     private String toneFooter;
     private String personaWarm;
@@ -34,6 +35,9 @@ public class PromptProperties {
 
     public String getModuleBill() { return moduleBill; }
     public void setModuleBill(String v) { this.moduleBill = v; }
+
+    public String getModuleFamily() { return moduleFamily; }
+    public void setModuleFamily(String v) { this.moduleFamily = v; }
 
     public String getModuleMemory() { return moduleMemory; }
     public void setModuleMemory(String v) { this.moduleMemory = v; }
